@@ -17,110 +17,6 @@ intents.members = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-
-@bot.event
-async def on_ready():
-    print(f'IM alive as {bot.user}')
-
-@bot.event
-async def on_member_join(member):
-    await member.send(f'Welcome to the server, {member.mention}!')
-    
-@bot.event
-async def on_member_remove(member):
-    await member.send(f'Sorry to see you go, {member.mention}!')
-
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
-    
-    if message.content.startswith('hello'):
-        await message.channel.send(f'Hello {message.author.mention}!')
-
-    if "lado" in message.content.lower():
-        await message.delete()
-
-        embed = discord.Embed()
-        embed.set_image(
-            url="https://c.tenor.com/KZF6Cke4FH4AAAAd/tenor.gif"
-        )
-
-        await message.channel.send(
-            content=message.author.mention,
-            embed=embed
-        )
-
-    if "machikney" in message.content.lower():
-        await message.delete()
-
-        embed = discord.Embed()
-        embed.set_image(
-            url="https://c.tenor.com/KZF6Cke4FH4AAAAd/tenor.gif"
-        )
-
-        await message.channel.send(
-            content=message.author.mention,
-            embed=embed
-        )
-
-    if "randi" in message.content.lower():
-        await message.delete()
-
-        embed = discord.Embed()
-        embed.set_image(
-            url="https://c.tenor.com/KZF6Cke4FH4AAAAd/tenor.gif"
-        )
-
-        await message.channel.send(
-            content=message.author.mention,
-            embed=embed
-        )
-
-    if "rando" in message.content.lower():
-        await message.delete()
-
-        embed = discord.Embed()
-        embed.set_image(
-            url="https://c.tenor.com/KZF6Cke4FH4AAAAd/tenor.gif"
-        )
-
-        await message.channel.send(
-            content=message.author.mention,
-            embed=embed
-        )
-
-    if "turi" in message.content.lower():
-        await message.delete()
-
-        embed = discord.Embed()
-        embed.set_image(
-            url="https://c.tenor.com/KZF6Cke4FH4AAAAd/tenor.gif"
-        )
-
-        await message.channel.send(
-            content=message.author.mention,
-            embed=embed
-        )
-
-    await bot.process_commands(message)
-
-@bot.command()
-async def chup(ctx, member: discord.Member):
-    if member == " ":
-        await ctx.send(f'Chup muji {ctx.mention}')
-    await ctx.send(f'Chup muji {member.mention}')
-
-@bot.command()
-async def sorry(ctx, member: discord.Member):
-    embed = discord.Embed()
-    embed.set_image(url="https://c.tenor.com/xcWphzVquJ8AAAAd/tenor.gif")
-
-    await ctx.send(
-        content=member.mention,
-        embed=embed
-    )
-
 CONFIG = {
     'DUO_CHANNEL_ID': 1462541076039471319,   
     'SQUAD_CHANNEL_ID': 1462541289173028864, 
@@ -277,6 +173,105 @@ async def vc_unban(ctx, member: discord.Member):
     await ctx.channel.set_permissions(member, overwrite=None)
     await ctx.send(f"✅ Unbanned {member.mention}. They can now join again.")
 
+@bot.event
+async def on_member_join(member):
+    await member.send(f'Welcome to the server, {member.mention}!')
+    
+@bot.event
+async def on_member_remove(member):
+    await member.send(f'Sorry to see you go, {member.mention}!')
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    
+    if message.content.startswith('hello'):
+        await message.channel.send(f'Hello {message.author.mention}!')
+
+    if "lado" in message.content.lower():
+        await message.delete()
+
+        embed = discord.Embed()
+        embed.set_image(
+            url="https://c.tenor.com/KZF6Cke4FH4AAAAd/tenor.gif"
+        )
+
+        await message.channel.send(
+            content=message.author.mention,
+            embed=embed
+        )
+
+    if "machikney" in message.content.lower():
+        await message.delete()
+
+        embed = discord.Embed()
+        embed.set_image(
+            url="https://c.tenor.com/KZF6Cke4FH4AAAAd/tenor.gif"
+        )
+
+        await message.channel.send(
+            content=message.author.mention,
+            embed=embed
+        )
+
+    if "randi" in message.content.lower():
+        await message.delete()
+
+        embed = discord.Embed()
+        embed.set_image(
+            url="https://c.tenor.com/KZF6Cke4FH4AAAAd/tenor.gif"
+        )
+
+        await message.channel.send(
+            content=message.author.mention,
+            embed=embed
+        )
+
+    if "rando" in message.content.lower():
+        await message.delete()
+
+        embed = discord.Embed()
+        embed.set_image(
+            url="https://c.tenor.com/KZF6Cke4FH4AAAAd/tenor.gif"
+        )
+
+        await message.channel.send(
+            content=message.author.mention,
+            embed=embed
+        )
+
+    if "turi" in message.content.lower():
+        await message.delete()
+
+        embed = discord.Embed()
+        embed.set_image(
+            url="https://c.tenor.com/KZF6Cke4FH4AAAAd/tenor.gif"
+        )
+
+        await message.channel.send(
+            content=message.author.mention,
+            embed=embed
+        )
+
+    await bot.process_commands(message)
+
+@bot.command()
+async def chup(ctx, member: discord.Member):
+    if member == " ":
+        await ctx.send(f'Chup muji {ctx.mention}')
+    await ctx.send(f'Chup muji {member.mention}')
+
+@bot.command()
+async def sorry(ctx, member: discord.Member):
+    embed = discord.Embed()
+    embed.set_image(url="https://c.tenor.com/xcWphzVquJ8AAAAd/tenor.gif")
+
+    await ctx.send(
+        content=member.mention,
+        embed=embed
+    )
+    
 if __name__ == "__main__":
     if TOKEN is None:
         raise ValueError("Discord token not found in environment!")
