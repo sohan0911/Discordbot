@@ -278,4 +278,6 @@ async def vc_unban(ctx, member: discord.Member):
     await ctx.send(f"✅ Unbanned {member.mention}. They can now join again.")
 
 if __name__ == "__main__":
+    if TOKEN is None:
+        raise ValueError("Discord token not found in environment!")
     bot.run(os.getenv("DISCORD_TOKEN"))
