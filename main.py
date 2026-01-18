@@ -276,6 +276,6 @@ async def vc_ban(ctx, member: discord.Member):
 async def vc_unban(ctx, member: discord.Member):
     await ctx.channel.set_permissions(member, overwrite=None)
     await ctx.send(f"✅ Unbanned {member.mention}. They can now join again.")
+
 if __name__ == "__main__":
-    TOKEN = os.getenv("DISCORD_TOKEN")
     bot.run(os.getenv("DISCORD_TOKEN"))
