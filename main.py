@@ -43,9 +43,7 @@ CONFIG = {
     "CATEGORY_ID": None
 }
 
-# =========================
-# State
-# =========================
+
 active_channels = set()
 channel_owners = {}
 
