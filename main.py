@@ -92,7 +92,7 @@ async def handle_join(member, channel):
 
     try:
         new_channel = await guild.create_voice_channel(
-            name=f"{member.name} - {prefix}",
+            name=f"{prefix}",
             category=category,
             user_limit=limit,
             overwrites=overwrites
@@ -139,73 +139,123 @@ async def handle_leave(member, channel):
 # =========================
 # Helpers
 # =========================
-def is_owner():
+def get_user_vc(ctx):
+    if not ctx.author.voice or not ctx.author.voice.channel:
+        return None
+    return ctx.author.voice.channel
+
+def is_vc_owner():
     async def predicate(ctx):
-        if ctx.channel.id not in active_channels:
+        vc = get_user_vc(ctx)
+
+        if not vc:
+            await ctx.send("❌ You must be in your voice channel.")
             return False
-        if channel_owners.get(ctx.channel.id) != ctx.author.id:
-            await ctx.send("❌ Only the owner can do this.", delete_after=5)
+
+        if vc.id not in active_channels:
+            await ctx.send("❌ This is not a managed voice channel.")
             return False
+
+        if channel_owners.get(vc.id) != ctx.author.id:
+            await ctx.send("❌ Only the channel owner can use this.")
+            return False
+
         return True
     return commands.check(predicate)
+
 
 # =========================
 # Commands
 # =========================
-@bot.command()
-@is_owner()
+@bot.command(name="vc-limit")
+@is_vc_owner()
 async def vc_limit(ctx, n: int):
-    await ctx.channel.edit(user_limit=n)
+    vc = get_user_vc(ctx)
+    await vc.edit(user_limit=n)
     await ctx.send(f"✅ User limit set to **{n}**")
 
-@bot.command()
-@is_owner()
+
+@bot.command(name="vc-transfer")
+@is_vc_owner()
 async def vc_transfer(ctx, member: discord.Member):
-    channel_owners[ctx.channel.id] = member.id
-    await ctx.channel.set_permissions(member, manage_channels=True, move_members=True)
+    vc = get_user_vc(ctx)
+
+    if member not in vc.members:
+        await ctx.send("❌ User must be in the voice channel.")
+        return
+
+    channel_owners[vc.id] = member.id
+
+    await vc.set_permissions(member, manage_channels=True, move_members=True)
+    await vc.set_permissions(ctx.author, manage_channels=False, move_members=False)
+
     await ctx.send(f"👑 Ownership transferred to {member.mention}")
 
-@bot.command()
+@bot.command(name="vc-claim")
 async def vc_claim(ctx):
-    if ctx.channel.id not in active_channels:
+    vc = get_user_vc(ctx)
+
+    if not vc or vc.id not in active_channels:
         return
 
-    owner_id = channel_owners.get(ctx.channel.id)
+    owner_id = channel_owners.get(vc.id)
     owner = ctx.guild.get_member(owner_id) if owner_id else None
 
-    if owner and owner in ctx.channel.members:
-        await ctx.send("❌ Owner is still present.", delete_after=5)
+    if owner and owner in vc.members:
+        await ctx.send("❌ Owner is still in the channel.")
         return
 
-    channel_owners[ctx.channel.id] = ctx.author.id
-    await ctx.send("👑 You are now the owner.")
+    channel_owners[vc.id] = ctx.author.id
+    await vc.set_permissions(ctx.author, manage_channels=True, move_members=True)
 
-@bot.command()
+    await ctx.send("👑 You have claimed ownership.")
+
+@bot.command(name="vc-owner")
 async def vc_owner(ctx):
-    owner_id = channel_owners.get(ctx.channel.id)
+    vc = get_user_vc(ctx)
+
+    if not vc or vc.id not in active_channels:
+        return
+
+    owner_id = channel_owners.get(vc.id)
     owner = ctx.guild.get_member(owner_id) if owner_id else None
-    await ctx.send(f"👑 Owner: {owner.mention if owner else 'Unknown'}")
 
-@bot.command()
-@is_owner()
+    await ctx.send(f"👑 Current owner: {owner.mention if owner else 'Unknown'}")
+
+
+@bot.command(name="vc-kick")
+@is_vc_owner()
 async def vc_kick(ctx, member: discord.Member):
-    if member in ctx.channel.members:
-        await member.move_to(None)
-        await ctx.send(f"👞 Kicked {member.mention}")
+    vc = get_user_vc(ctx)
 
-@bot.command()
-@is_owner()
+    if member not in vc.members:
+        await ctx.send("❌ User is not in your voice channel.")
+        return
+
+    await member.move_to(None)
+    await ctx.send(f"👞 Kicked {member.mention}")
+
+@bot.command(name="vc-ban")
+@is_vc_owner()
 async def vc_ban(ctx, member: discord.Member):
-    await ctx.channel.set_permissions(member, connect=False)
-    if member in ctx.channel.members:
-        await member.move_to(None)
-    await ctx.send(f"🚫 Banned {member.mention}")
+    vc = get_user_vc(ctx)
 
-@bot.command()
-@is_owner()
+    await vc.set_permissions(member, connect=False)
+
+    if member in vc.members:
+        await member.move_to(None)
+
+    await ctx.send(f"🚫 Banned {member.mention} from the channel.")
+
+
+@bot.command(name="vc-uban")
+@is_vc_owner()
 async def vc_uban(ctx, member: discord.Member):
-    await ctx.channel.set_permissions(member, overwrite=None)
+    vc = get_user_vc(ctx)
+
+    await vc.set_permissions(member, overwrite=None)
     await ctx.send(f"✅ Unbanned {member.mention}")
+
 
 @bot.command()
 async def chup(ctx, member: discord.Member):
