@@ -101,26 +101,6 @@ async def handle_join(member, channel):
         active_channels.add(new_channel.id)
         channel_owners[new_channel.id] = member.id
 
-        if guild.system_channel:
-            embed = discord.Embed(
-                title="🔊 Temporary Voice Channel Created",
-                description=f"{member.mention}, you are the owner.",
-                color=0x3498db
-            )
-            embed.add_field(
-                name="Commands",
-                value=(
-                    "`!vc-limit <n>`\n"
-                    "`!vc-transfer @user`\n"
-                    "`!vc-claim`\n"
-                    "`!vc-owner`\n"
-                    "`!vc-kick @user`\n"
-                    "`!vc-ban @user`\n"
-                    "`!vc-uban @user`"
-                ),
-                inline=False
-            )
-            await guild.system_channel.send(embed=embed)
 
     except Exception as e:
         print(f"❌ Error creating VC: {e}")
