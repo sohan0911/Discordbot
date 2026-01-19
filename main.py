@@ -90,7 +90,7 @@ async def handle_join(member, channel):
 
     try:
         new_channel = await guild.create_voice_channel(
-            name=f"{prefix}",
+            name=f"{member.name} - {prefix}",
             category=category,
             user_limit=limit,
             overwrites=overwrites
