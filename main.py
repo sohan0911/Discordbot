@@ -79,14 +79,30 @@ async def handle_join(member, channel):
     category = guild.get_channel(CONFIG["CATEGORY_ID"]) if CONFIG["CATEGORY_ID"] else channel.category
 
     overwrites = {
-        guild.default_role: discord.PermissionOverwrite(connect=True),
-        member: discord.PermissionOverwrite(
-            manage_channels=True, move_members=True, connect=True
-        ),
-        guild.me: discord.PermissionOverwrite(
-            manage_channels=True, move_members=True, connect=True
-        )
-    }
+    guild.default_role: discord.PermissionOverwrite(
+        connect=True,
+        speak=True,
+        use_voice_activation=True,
+        stream=True
+    ),
+
+    member: discord.PermissionOverwrite(
+        connect=True,
+        speak=True,
+        use_voice_activation=True,
+        stream=True,
+        manage_channels=True,
+        move_members=True
+    ),
+
+    guild.me: discord.PermissionOverwrite(
+        connect=True,
+        speak=True,
+        manage_channels=True,
+        move_members=True
+    )
+}
+
 
     try:
         new_channel = await guild.create_voice_channel(
