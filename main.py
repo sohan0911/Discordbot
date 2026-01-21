@@ -83,21 +83,27 @@ async def handle_join(member, channel):
         connect=True,
         speak=True,
         use_soundboard=True,
-        use_embedded_activities=True
+        use_embedded_activities=True,
+        use_voice_activation=True, 
+        stream=True,
     ),
 
     member: discord.PermissionOverwrite(
         connect=True,
         speak=True,
         use_soundboard=True,
-        use_embedded_activities=True
+        use_embedded_activities=True,
+        use_voice_activation=True, 
+        stream=True,
     ),
 
     guild.me: discord.PermissionOverwrite(
         connect=True,
         speak=True,
         use_soundboard=True,
-        use_embedded_activities=True
+        use_embedded_activities=True,
+        use_voice_activation=True, 
+        stream=True,
     )
     }
 
