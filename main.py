@@ -2,6 +2,7 @@ import os
 import logging
 import discord
 import random
+import re
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -360,17 +361,16 @@ async def roast(ctx, member: discord.Member):
 
 
 RIZZ = [
-    "Timro nickname ta blanket hola hai, herdai patyau patyau lagne raixau.",
-    "Girl everytime I see you I feel like Aasok darji. Cuz timi vanda ramri koi chaina sansar mai.",
-    "Are you Bhimsen Thapa ?? because you just erected my dharahara",
-    "hamlai pani maya le hera na parbatiiiii",
-    "Are you Rajesh Hamal? Cuz, every time I see you I just want to say HEYY!!!",
-    "Bango bango thiye, sidha bhaye ma. Timilai dekhera fida bhaye ma. Bhannu ta dherai thiyo, tara aaile chai muji bhandai bida bhaye ma.",
-    "Are you Mommy ko kuchho, cause you hit different?",
-    "Andi Mandi Jhandi Jo Mero Girlfriend Hudaina Tyo ____."
+    "Timro nickname ta blanket hola hai, herdai patyau patyau lagne raixau. https://c.tenor.com/lkXE8nvV6JsAAAAd/tenor.gif",
+    "Are you Bhimsen Thapa ?? because you just erected my dharahara https://c.tenor.com/hlXzfw9TqK8AAAAd/tenor.gif",
+    "hamlai pani maya le hera na parbatiiiii https://c.tenor.com/Rd8FQYPG2EwAAAAd/tenor.gif",
+    "Are you Rajesh Hamal? Cuz, every time I see you I just want to say HEYY!!! https://c.tenor.com/vRs8EyzQvY4AAAAd/tenor.gif",
+    "Bango bango thiye, sidha bhaye ma. Timilai dekhera fida bhaye ma. Bhannu ta dherai thiyo, tara aaile chai muji bhandai bida bhaye ma. https://c.tenor.com/SJbT1KH73loAAAAd/tenor.gif",
+    "Are you Mommy ko kuchho, cause you hit different? https://c.tenor.com/8gZEnxPT-B4AAAAd/tenor.gif",
+    "Andi Mandi Jhandi Jo Mero Girlfriend Hudaina Tyo ____. https://c.tenor.com/ZARBViZffU4AAAAd/tenor.gif",
     "Are you Mommy ko kuchho, cause you hit different? https://tenor.com/bcDRJ.gif",
     "Timi vayena vane ta chini haleko chiya pani mitho hunna https://tenor.com/bmXLT.gif",
-    "I am not an insurance agent, but will you beema girl?https://tenor.com/buajG.gif",
+    "I am not an insurance agent, but will you beema girl? https://tenor.com/buajG.gif",
     "Timi sirak ta haina, tara herdai pattauna manlagyo https://tenor.com/sFvUQEMt8tN.gif",
     "Timro photo pathau na, ma taas kheldai thiye, mero Rani nei harayo k https://tenor.com/bVB8x.gif",
     "Are you from Samakhusi? Cause you made my Ama Khusi! https://tenor.com/7DLy.gif",
@@ -384,22 +384,45 @@ RIZZ = [
     "Are you Momo? Cause I wanna eat you Gwamma! https://tenor.com/5kSC.gif",
     "(She: Hawa timi) You called me Hawa, I don’t think you can live without it. https://tenor.com/bQxpo.gif",
     "Ani khana Khayou ta? https://tenor.com/Y9Hw.gif",
-    "I remember Ashok Darji where ever I see you cause he said timi vanda ramri koi xaina sansar ma. https://tenor.com/cjxLrDttXoV.gif",
+    "Girl everytime I see you I feel like Aasok darji. Cuz timi vanda ramri koi chaina sansar mai. https://tenor.com/cjxLrDttXoV.gif",
     "Raksi ta esai badnam xa, asli nasa ta timro ankha ma xa! https://tenor.com/8smf.gif",
     "We go together like daal and bhaat! https://tenor.com/7YaC.gif",
     "Did you call pathao? Cause I am here to pick you up! https://tenor.com/YBlm.gif",
-    "I am gonna leave you like Bagmati; wet, dirty and constantly flowing. (We pray you wont hear ghar ma didi bahini xaina) https://tenor.com/bhB4n.gif "
-    ]
+    "I am gonna leave you like Bagmati; wet, dirty and constantly flowing. (We pray you wont hear ghar ma didi bahini xaina) https://tenor.com/bhB4n.gif"
+]
+
+TENOR_REGEX = r"(https?://\S+\.gif)"
+
+def create_rizz_embed(author: discord.Member):
+    rizz = random.choice(RIZZ)
+
+    gif = None
+    match = re.search(TENOR_REGEX, rizz)
+    if match:
+        gif = match.group(1)
+        rizz = rizz.replace(gif, "").strip()
+
+    embed = discord.Embed(
+        description=rizz,
+        color=0xff4d6d
+    )
+    embed.set_footer(text=f"Rizz dropped by {author.display_name}")
+
+    if gif:
+        embed.set_image(url=gif)
+
+    return embed
 
 
 @bot.command()
-async def rizz(ctx, member: discord.Member):
-    if member.bot:
-        await ctx.send("🤖 Roasting bots is unfair… they have feelings too.")
-        return
+async def rizz(ctx, member: discord.Member = None):
+    embed = create_rizz_embed(ctx.author)
 
-    roast = random.choice(RIZZ)
-    await ctx.send(f"🔥 {member.mention} {roast}")
+    if member:
+        await ctx.send(content=member.mention, embed=embed)
+    else:
+        await ctx.send(embed=embed)
+
 
 # =========================
 # Message Moderation
