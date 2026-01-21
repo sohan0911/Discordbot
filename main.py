@@ -99,7 +99,7 @@ async def handle_join(member, channel):
         use_soundboard=True,
         use_activities=True
     )
-}
+    }
 
 
     try:
