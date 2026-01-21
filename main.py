@@ -358,6 +358,26 @@ async def roast(ctx, member: discord.Member):
     roast = random.choice(ROASTS)
     await ctx.send(f"🔥 {member.mention} {roast}")
 
+
+RIZZ = [
+    "Timro nickname ta blanket hola hai, herdai patyau patyau lagne raixau.",
+    "Girl everytime I see you I feel like Aasok darji. Cuz timi vanda ramri koi chaina sansar mai.",
+    "Are you Bhimsen Thapa ?? because you just erected my dharahara",
+    "Timi ta merai wifi jasto chau, jun sanga connect huda matra ma online hunchu.",
+    "hamlai pani maya le hera na parbatiiiii",
+    "Are you Rajesh Hamal? Cuz, every time I see you I just want to say HEYY!!!",
+    ]
+
+
+@bot.command()
+async def rizz(ctx, member: discord.Member):
+    if member.bot:
+        await ctx.send("🤖 Roasting bots is unfair… they have feelings too.")
+        return
+
+    roast = random.choice(RIZZ)
+    await ctx.send(f"🔥 {member.mention} {roast}")
+
 # =========================
 # Message Moderation
 # =========================
