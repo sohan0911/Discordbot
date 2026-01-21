@@ -363,9 +363,32 @@ RIZZ = [
     "Timro nickname ta blanket hola hai, herdai patyau patyau lagne raixau.",
     "Girl everytime I see you I feel like Aasok darji. Cuz timi vanda ramri koi chaina sansar mai.",
     "Are you Bhimsen Thapa ?? because you just erected my dharahara",
-    "Timi ta merai wifi jasto chau, jun sanga connect huda matra ma online hunchu.",
     "hamlai pani maya le hera na parbatiiiii",
     "Are you Rajesh Hamal? Cuz, every time I see you I just want to say HEYY!!!",
+    "Bango bango thiye, sidha bhaye ma. Timilai dekhera fida bhaye ma. Bhannu ta dherai thiyo, tara aaile chai muji bhandai bida bhaye ma.",
+    "Are you Mommy ko kuchho, cause you hit different?",
+    "Andi Mandi Jhandi Jo Mero Girlfriend Hudaina Tyo ____."
+    "Are you Mommy ko kuchho, cause you hit different? https://tenor.com/bcDRJ.gif",
+    "Timi vayena vane ta chini haleko chiya pani mitho hunna https://tenor.com/bmXLT.gif",
+    "I am not an insurance agent, but will you beema girl?https://tenor.com/buajG.gif",
+    "Timi sirak ta haina, tara herdai pattauna manlagyo https://tenor.com/sFvUQEMt8tN.gif",
+    "Timro photo pathau na, ma taas kheldai thiye, mero Rani nei harayo k https://tenor.com/bVB8x.gif",
+    "Are you from Samakhusi? Cause you made my Ama Khusi! https://tenor.com/7DLy.gif",
+    "Are you dozer? I can stare you all day! https://tenor.com/Vfnl.gif",
+    "If you have two kids in future and i also have two kids how many total kids we will have? (She will say 4) Nah just two https://tenor.com/bOLTL.gif",
+    "Are you Kathmandu? Cause you took my breath away! https://tenor.com/bCVC9.gif",
+    "I am gonna love you till the Melamchi ko pani arrived! (Sadly it’s here) https://tenor.com/Ae6S.gif",
+    "Is your dad biplov? Cause you are a bomb? https://tenor.com/Ae6S.gif",
+    "Your eyes are Patan ko galli, I keep getting lost in them. https://tenor.com/bcS7u.gif",
+    "Timilai sugar lagxa vanera matra ho natra mitho mitho guff hanna malai ni auxa https://tenor.com/bwe9s.gif",
+    "Are you Momo? Cause I wanna eat you Gwamma! https://tenor.com/5kSC.gif",
+    "(She: Hawa timi) You called me Hawa, I don’t think you can live without it. https://tenor.com/bQxpo.gif",
+    "Ani khana Khayou ta? https://tenor.com/Y9Hw.gif",
+    "I remember Ashok Darji where ever I see you cause he said timi vanda ramri koi xaina sansar ma. https://tenor.com/cjxLrDttXoV.gif",
+    "Raksi ta esai badnam xa, asli nasa ta timro ankha ma xa! https://tenor.com/8smf.gif",
+    "We go together like daal and bhaat! https://tenor.com/7YaC.gif",
+    "Did you call pathao? Cause I am here to pick you up! https://tenor.com/YBlm.gif",
+    "I am gonna leave you like Bagmati; wet, dirty and constantly flowing. (We pray you wont hear ghar ma didi bahini xaina) https://tenor.com/bhB4n.gif "
     ]
 
 
