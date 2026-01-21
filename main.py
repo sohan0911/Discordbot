@@ -1,6 +1,7 @@
 import os
 import logging
 import discord
+import random
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -32,6 +33,7 @@ intents.voice_states = True
 intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
 
 # =========================
 # Config
@@ -79,36 +81,34 @@ async def handle_join(member, channel):
     category = guild.get_channel(CONFIG["CATEGORY_ID"]) if CONFIG["CATEGORY_ID"] else channel.category
 
     overwrites = {
-    guild.default_role: discord.PermissionOverwrite(
-        connect=True,
-        speak=True,
-        use_soundboard=True,
-        use_embedded_activities=True,
-        use_voice_activation=True, 
-        stream=True,
-    ),
-
-    member: discord.PermissionOverwrite(
-        connect=True,
-        speak=True,
-        use_soundboard=True,
-        use_embedded_activities=True,
-        use_voice_activation=True, 
-        stream=True,
-    ),
-
-    guild.me: discord.PermissionOverwrite(
-        connect=True,
-        speak=True,
-        use_soundboard=True,
-        use_embedded_activities=True,
-        use_voice_activation=True, 
-        stream=True,
-    )
-    }
-
-
+        guild.default_role: discord.PermissionOverwrite(
+            connect=True,
+            speak=True,
+            use_soundboard=True,
+            use_embedded_activities=True,
+            use_voice_activation=True,
+            stream=True,
+        ),
+        member: discord.PermissionOverwrite(
+            connect=True,
+            speak=True,
+            use_soundboard=True,
+            use_embedded_activities=True,
+            use_voice_activation=True,
+            stream=True,
+        ),
+        guild.me: discord.PermissionOverwrite(
+            connect=True,
+            speak=True,
+            use_soundboard=True,
+            use_embedded_activities=True,
+            use_voice_activation=True,
+            stream=True,
+        )
+        }
+    
     try:
+        # Create the voice channel
         new_channel = await guild.create_voice_channel(
             name=f"{member.name} - {prefix}",
             category=category,
@@ -117,10 +117,26 @@ async def handle_join(member, channel):
         )
 
         await member.move_to(new_channel)
-
         active_channels.add(new_channel.id)
         channel_owners[new_channel.id] = member.id
-
+        
+        embed = discord.Embed(
+            title="🔊 Temporary Voice Channel Created", 
+            description=f"Welcome, {member.mention}! You are the owner of this channel.", 
+            color=0x3498db
+        )
+        embed.add_field(name="Available Commands", value=(
+            "`!vc-limit <n>` - Set user limit\n"
+            "`!vc-transfer @user` - Transfer ownership\n"
+            "`!vc-claim` - Claim ownership\n"
+            "`!vc-owner` - Show current owner\n"
+            "`!vc-kick @user` - Kick a user\n"
+            "`!vc-ban @user` - Ban a user\n"
+            "`!vc-uban @user` - Unban a user"
+        ), inline=False)
+        embed.set_footer(text="Commands only work in this channel's chat.")
+        
+        await new_channel.send(embed=embed)
 
     except Exception as e:
         print(f"❌ Error creating VC: {e}")
@@ -260,10 +276,37 @@ async def chup(ctx, member: discord.Member):
     await ctx.send(f"Chup muji {member.mention}")
 
 @bot.command()
+async def sut(ctx, member: discord.Member):
+    await ctx.send(f"sut muji {member.mention}")
+
+@bot.command()
 async def sorry(ctx, member: discord.Member):
     embed = discord.Embed()
     embed.set_image(url="https://c.tenor.com/xcWphzVquJ8AAAAd/tenor.gif")
     await ctx.send(content=member.mention, embed=embed)
+
+ROASTS = [
+    "yo momma so old her birth certificate says expired",
+    "yo momma so poor when i saw her kickin a can down the street i asked what she was doin she said movin",
+    "yo momma so ugly she made u",
+    "yo momma so stupid she put airbags on her computer in case it crashed",
+    "yo momma so fat when she skips a meal the stock market drops",
+    "yo momma so lazy she stuck her nose out the window and let the wind blow it",
+    "yo momma so dumb she thought a quarterback was a refund",
+    "yo momma so poor she can't even pay attention",
+    "yo momma so fat when she goes to the beach the whales sing 'we are family'",
+    "yo momma so ugly when she tried to join an ugly contest they said sorry not today",
+]
+
+
+@bot.command()
+async def roast(ctx, member: discord.Member):
+    if member.bot:
+        await ctx.send("🤖 Roasting bots is unfair… they have feelings too.")
+        return
+
+    roast = random.choice(ROASTS)
+    await ctx.send(f"🔥 {member.mention} {roast}")
 
 # =========================
 # Message Moderation
@@ -297,3 +340,4 @@ async def on_message(message):
 # Run
 # =========================
 bot.run(TOKEN)
+
