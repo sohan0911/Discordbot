@@ -459,28 +459,38 @@ async def rizz(ctx, member: discord.Member = None):
 # =========================
 BAD_WORDS = {"lado", "machikney", "randi", "rando", "turi"}
 
+BAD_WORDS_PATTERN = re.compile(
+    r"\b(" + "|".join(re.escape(word) for word in BAD_WORDS) + r")\b",
+    re.IGNORECASE
+)
+
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
 
-    # Let commands through first
-    if message.content.startswith(bot.command_prefix):
-        await bot.process_commands(message)
-        return
+    # Allow commands
+    await bot.process_commands(message)
 
+    # Greeting
     if message.content.lower().startswith("hello"):
         await message.channel.send(f"Hello {message.author.mention}!")
 
-    if any(word in message.content.lower() for word in BAD_WORDS):
+    # Bad word detection (EXACT words only)
+    if BAD_WORDS_PATTERN.search(message.content):
         try:
             await message.delete()
-        except:
+        except discord.Forbidden:
             pass
 
-        embed = discord.Embed()
+        embed = discord.Embed(color=0xff0000)
         embed.set_image(url="https://c.tenor.com/KZF6Cke4FH4AAAAd/tenor.gif")
-        await message.channel.send(message.author.mention, embed=embed)
+
+        await message.channel.send(
+            content=message.author.mention,
+            embed=embed
+        )
+
 
 # =========================
 # Run
