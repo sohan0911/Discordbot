@@ -7,16 +7,13 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import threading
 from flask import Flask
-
+import threading
+import time
+import requests
 # =========================
 # Load Environment
 # =========================
 load_dotenv()
-
-from groq import Groq
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-groq_client = Groq(api_key=GROQ_API_KEY)
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -462,31 +459,6 @@ async def rizz(ctx, member: discord.Member = None):
     else:
         await ctx.send(embed=embed)
 
-@bot.command()
-@commands.cooldown(1, 10, commands.BucketType.user)
-async def gpt(ctx, *, prompt: str):
-    try:
-        await ctx.trigger_typing()
-
-        response = groq_client.chat.completions.create(
-            model="llama3-70b-8192",  # Free & strong
-            messages=[
-                {"role": "system", "content": "You are a helpful Discord bot."},
-                {"role": "user", "content": prompt}
-            ],
-        )
-
-        reply = response.choices[0].message.content
-
-        if len(reply) > 2000:
-            reply = reply[:1990] + "..."
-
-        await ctx.send(reply)
-
-    except Exception as e:
-        await ctx.send("❌ AI error.")
-        print("GROQ ERROR:", e)
-
 
 # =========================
 # Message Moderation
@@ -531,13 +503,28 @@ app = Flask(__name__)
 def home():
     return "Bot is running!"
 
-def run():
+def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# Start Flask in separate thread
-t = threading.Thread(target=run)
-t.start()
+# -------------------------
+# Keep awake function
+# -------------------------
+def keep_awake():
+    url = "https://your-render-service.onrender.com/"  # replace with your Render URL
+    while True:
+        try:
+            requests.get(url, timeout=5)
+            print(f"✅ Pinged {url} at {time.strftime('%H:%M:%S')}")
+        except Exception as e:
+            print(f"❌ Ping error: {e}")
+        time.sleep(5 * 60)  # every 5 minutes
+
+# -------------------------
+# Start threads before bot
+# -------------------------
+threading.Thread(target=run_flask, daemon=True).start()
+threading.Thread(target=keep_awake, daemon=True).start()
 
 # =========================
 # Run

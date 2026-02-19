@@ -1,5 +1,4 @@
 discord.py
-python-dotenv
-logging
 flask
-groq
+requests
+python-dotenv
