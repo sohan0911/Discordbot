@@ -11,6 +11,11 @@ from flask import Flask
 # =========================
 # Load Environment
 # =========================
+from groq import Groq
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+groq_client = Groq(api_key=GROQ_API_KEY)
+
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -455,6 +460,30 @@ async def rizz(ctx, member: discord.Member = None):
     else:
         await ctx.send(embed=embed)
 
+@bot.command()
+@commands.cooldown(1, 10, commands.BucketType.user)
+async def gpt(ctx, *, prompt: str):
+    try:
+        await ctx.trigger_typing()
+
+        response = groq_client.chat.completions.create(
+            model="llama3-70b-8192",  # Free & strong
+            messages=[
+                {"role": "system", "content": "You are a helpful Discord bot."},
+                {"role": "user", "content": prompt}
+            ],
+        )
+
+        reply = response.choices[0].message.content
+
+        if len(reply) > 2000:
+            reply = reply[:1990] + "..."
+
+        await ctx.send(reply)
+
+    except Exception as e:
+        await ctx.send("❌ AI error.")
+        print(e)
 
 # =========================
 # Message Moderation
