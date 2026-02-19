@@ -1,3 +1,4 @@
+
 import os
 import logging
 import discord
@@ -497,6 +498,33 @@ async def on_message(message):
             embed=embed
         )
 
+# Roles that are NOT allowed to send links
+BLOCKED_ROLES = ["Citizens", "special", "Artist"]  # change to your role names
+
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    # Check if user has one of the blocked roles
+    user_roles = [role.name for role in message.author.roles]
+    has_blocked_role = any(role in BLOCKED_ROLES for role in user_roles)
+
+    # Simple link detection
+    link_keywords = ["http://", "https://", "www.", "discord.gg"]
+
+    if has_blocked_role and any(word in message.content.lower() for word in link_keywords):
+        try:
+            await message.delete()
+            await message.channel.send(
+                f"{message.author.mention} ❌ You are not allowed to send links.",
+                delete_after=5
+            )
+        except:
+            pass
+        return
+
+    await bot.process_commands(message)
 app = Flask(__name__)
 
 @app.route("/")
