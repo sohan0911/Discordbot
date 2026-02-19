@@ -11,13 +11,15 @@ from flask import Flask
 # =========================
 # Load Environment
 # =========================
+load_dotenv()
+
 from groq import Groq
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 groq_client = Groq(api_key=GROQ_API_KEY)
 
-load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
+
 
 if not TOKEN:
     raise ValueError("DISCORD_TOKEN not found in environment variables")
@@ -483,7 +485,8 @@ async def gpt(ctx, *, prompt: str):
 
     except Exception as e:
         await ctx.send("❌ AI error.")
-        print(e)
+        print("GROQ ERROR:", e)
+
 
 # =========================
 # Message Moderation
