@@ -512,13 +512,13 @@ async def on_message(message):
     has_blocked_role = any(role in BLOCKED_ROLES for role in user_roles)
 
     # Simple link detection
-    link_keywords = ["http://", "https://", "www.", "discord.gg"]
+    link_keywords = ["discord.gg"]
 
     if has_blocked_role and any(word in message.content.lower() for word in link_keywords):
         try:
             await message.delete()
             await message.channel.send(
-                f"{message.author.mention} ❌ You are not allowed to send links.",
+                f"{message.author.mention} ❌ You are not allowed to send invites.",
                 delete_after=5
             )
         except:
