@@ -11,13 +11,14 @@ from flask import Flask
 import threading
 import time
 import requests
+import aiohttp
 # =========================
 # Load Environment
 # =========================
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-
+ZENSERP_API_KEY = os.getenv("ZENSERP_API_KEY")
 
 if not TOKEN:
     raise ValueError("DISCORD_TOKEN not found in environment variables")
@@ -525,6 +526,52 @@ async def on_message(message):
         return
 
     await bot.process_commands(message)
+
+
+@bot.command()
+async def google(ctx, *, query: str):
+    """Search Google using Zenserp API."""
+    async with ctx.channel.typing():
+        url = "https://app.zenserp.com/api/v2/search"
+        params = {
+            "q": query,
+            "apikey": ZENSERP_API_KEY,
+            "gl": "us",       # country
+            "hl": "en",       # language
+            "num": 5          # number of results
+        }
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params) as resp:
+                    if resp.status != 200:
+                        await ctx.send(f"❌ Zenserp API error: {resp.status}")
+                        return
+
+                    data = await resp.json()
+
+            if "organic" not in data:
+                await ctx.send("❌ No results found.")
+                return
+
+            results = data["organic"][:5]
+
+            message = f"🔎 **Results for:** {query}\n\n"
+
+            for i, result in enumerate(results, 1):
+                title = result.get("title", "No title")
+                link = result.get("url", "No link")
+                message += f"**{i}.** {title}\n{link}\n\n"
+
+            if len(message) > 2000:
+                message = message[:1990] + "..."
+
+            await ctx.send(message)
+
+        except Exception as e:
+            print("Zenserp error:", e)
+            await ctx.send("❌ Something went wrong while searching.")
+
 app = Flask(__name__)
 
 @app.route("/")
