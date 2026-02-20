@@ -527,38 +527,38 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-
 @bot.command()
+@commands.cooldown(1, 10, commands.BucketType.user)
 async def google(ctx, *, query: str):
-    """Search Google using Zenserp API."""
     async with ctx.channel.typing():
-        url = "https://app.zenserp.com/api/v2/search"
-        params = {
-            "q": query,
-            "apikey": ZENSERP_API_KEY,
-            "gl": "us",       # country
-            "hl": "en",       # language
-            "num": 5          # number of results
-        }
-
         try:
+            url = "https://app.zenserp.com/api/v2/search"
+            params = {
+                "q": query,
+                "apikey": ZENSERP_API_KEY,
+                "gl": "us",
+                "hl": "en",
+                "num": 5
+            }
+
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, params=params) as resp:
                     if resp.status != 200:
-                        await ctx.send(f"❌ Zenserp API error: {resp.status}")
+                        error_text = await resp.text()
+                        await ctx.send(f"❌ Zenserp API error {resp.status}")
+                        print(error_text)
                         return
 
                     data = await resp.json()
 
-            if "organic" not in data:
+            organic = data.get("organic")
+            if not organic:
                 await ctx.send("❌ No results found.")
                 return
 
-            results = data["organic"][:5]
-
             message = f"🔎 **Results for:** {query}\n\n"
 
-            for i, result in enumerate(results, 1):
+            for i, result in enumerate(organic[:5], 1):
                 title = result.get("title", "No title")
                 link = result.get("url", "No link")
                 message += f"**{i}.** {title}\n{link}\n\n"
@@ -570,7 +570,10 @@ async def google(ctx, *, query: str):
 
         except Exception as e:
             print("Zenserp error:", e)
-            await ctx.send("❌ Something went wrong while searching.")
+            # Only send error if nothing else was sent
+            if not ctx.channel.last_message or ctx.channel.last_message.author != bot.user:
+                await ctx.send("❌ Something went wrong while searching.")
+
 
 app = Flask(__name__)
 
