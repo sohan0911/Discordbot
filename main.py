@@ -589,7 +589,7 @@ def run_flask():
 # Keep awake function
 # -------------------------
 def keep_awake():
-    url = "https://your-render-service.onrender.com/"  # replace with your Render URL
+    url = "https://discordbot-ky33.onrender.com/"  # replace with your Render URL
     while True:
         try:
             requests.get(url, timeout=5)
