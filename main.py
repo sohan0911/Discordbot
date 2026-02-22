@@ -585,28 +585,7 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# -------------------------
-# Keep awake function
-# -------------------------
-def keep_awake():
-    url = "https://discordbot-ky33.onrender.com/"  # replace with your Render URL
-    while True:
-        try:
-            requests.get(url, timeout=5)
-            print(f"✅ Pinged {url} at {time.strftime('%H:%M:%S')}")
-        except Exception as e:
-            print(f"❌ Ping error: {e}")
-        time.sleep(5 * 60)  # every 5 minutes
-
-# -------------------------
-# Start threads before bot
-# -------------------------
 threading.Thread(target=run_flask, daemon=True).start()
-threading.Thread(target=keep_awake, daemon=True).start()
 
-# =========================
-# Run
-# =========================
 bot.run(TOKEN)
-
 
