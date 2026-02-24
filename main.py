@@ -87,7 +87,7 @@ async def on_member_join(member):
     # Footer with member count
     embed.set_footer(text=f"You're member #{len(member.guild.members)}!")
 
-    await channel.send({member.mention}, embed=embed)
+    await channel.send(f"{member.mention}", embed=embed)
 # =========================
 # Config
 # =========================
