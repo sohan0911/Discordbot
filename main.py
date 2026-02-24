@@ -619,7 +619,7 @@ async def register(ctx,member: discord.Member ):
 # 📋 SINGERS LIST (EMBED)
 @bot.command()
 @is_allowed_channel()
-async def singerslist(ctx):
+async def participantslist(ctx):
     users = load_users()
 
     if not users:
