@@ -585,38 +585,70 @@ async def google(ctx, *, query: str):
             if not ctx.channel.last_message or ctx.channel.last_message.author != bot.user:
                 await ctx.send("❌ Something went wrong while searching.")
 
+ALLOWED_CHANNEL_ID = 1475925227816091900
+
+
+# 🔒 Channel restriction check
+def is_allowed_channel():
+    async def predicate(ctx):
+        if ctx.channel.id != ALLOWED_CHANNEL_ID:
+            await ctx.send("❌ This command only works in the singers channel.")
+            return False
+        return True
+    return commands.check(predicate)
+
+
+# 🎤 REGISTER COMMAND
 @bot.command()
+@is_allowed_channel()
 async def register(ctx):
     users = load_users()
+
     user_id = str(ctx.author.id)
 
     if user_id in users:
-        await ctx.send("❌ You are already registered!")
+        await ctx.send("⚠️ You are already registered.")
         return
 
     users.append(user_id)
     save_users(users)
 
-    await ctx.send("✅ You have been successfully registered!")
+    await ctx.send(f"✅ {ctx.author.mention} has been registered!")
 
+
+# 📋 SINGERS LIST (EMBED)
 @bot.command()
-async def signlist(ctx):
+@is_allowed_channel()
+async def singerslist(ctx):
     users = load_users()
 
     if not users:
         await ctx.send("No one is registered yet.")
         return
 
-    message = "📋 **Registered Users:**\n"
+    embed = discord.Embed(
+        title="🎤 Registered Singers",
+        color=0x3498db
+    )
+
+    description = ""
 
     for index, user_id in enumerate(users):
-        user = await bot.fetch_user(int(user_id))
-        message += f"{index + 1}. {user.name}#{user.discriminator}\n"
+        try:
+            user = await bot.fetch_user(int(user_id))
+            description += f"**{index + 1}.** {user.name}\n"
+        except:
+            description += f"**{index + 1}.** Unknown User\n"
 
-    await ctx.send(message)
+    embed.description = description
+    embed.set_footer(text="Commands only work in this channel.")
 
+    await ctx.send(embed=embed)
+
+
+# ❌ REMOVE USER COMMAND
 @bot.command()
-@commands.has_permissions(administrator=True)
+@is_allowed_channel()
 async def remove(ctx, member: discord.Member):
     users = load_users()
     user_id = str(member.id)
@@ -628,7 +660,7 @@ async def remove(ctx, member: discord.Member):
     users.remove(user_id)
     save_users(users)
 
-    await ctx.send(f"✅ {member.mention} has been removed from the list.")
+    await ctx.send(f"🗑️ {member.mention} has been removed from the list.")
 
 app = Flask(__name__)
 
