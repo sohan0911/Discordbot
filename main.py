@@ -57,6 +57,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_member_join(member):
     WELCOME_CHANNEL_ID = 1461828500662128710
+    intro_channel_id = 1462151264727990394
     RULES_CHANNEL_ID = 1461809896553971826
     GENERAL_CHANNEL_ID = 1461802394265321589
     
@@ -69,7 +70,8 @@ async def on_member_join(member):
     embed = discord.Embed(
         title=f"🎉 Welcome {member.name}!",
         description=(
-            f"Welcome to **{member.guild.name}**!\n\n"
+            f"Welcome to **{member.guild.name} , {member.name} 🎉!**\n\n"
+            f"Take your time to introduce yourself and get familiar with the community: <#{intro_channel_id}>\n"
             f"Please check the rules here: <#{RULES_CHANNEL_ID}>\n"
             f"Say hi in {bot.get_channel(GENERAL_CHANNEL_ID).mention}!"
         ),
