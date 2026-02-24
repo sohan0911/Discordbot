@@ -70,7 +70,7 @@ async def on_member_join(member):
     embed = discord.Embed(
         title=f"🎉 Welcome {member.name}!",
         description=(
-            f"Welcome to **{member.guild.name} , {member.name} 🎉!**\n\n"
+            f"Welcome to **{member.guild.name} , {member.mention}!**\n\n"
             f"Take your time to introduce yourself and get familiar with the community: <#{intro_channel_id}>\n"
             f"Please check the rules here: <#{RULES_CHANNEL_ID}>\n"
             f"Say hi in {bot.get_channel(GENERAL_CHANNEL_ID).mention}!"
