@@ -54,7 +54,45 @@ intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+@bot.event
+async def on_member_join(member):
+    WELCOME_CHANNEL_ID = 1461828500662128710
+    RULES_CHANNEL_ID = 1461809896553971826
+    GENERAL_CHANNEL_ID = 1461802394265321589
+    
+    channel = bot.get_channel(WELCOME_CHANNEL_ID)
+    if not channel:
+        return
 
+    # Random welcome GIFs
+    gifs = [
+        "https://media.giphy.com/media/OkJat1YNdoD3W/giphy.gif",
+        "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
+        "https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif"
+    ]
+    chosen_gif = random.choice(gifs)
+
+    # Create the embed
+    embed = discord.Embed(
+        title=f"🎉 Welcome {member.name}!",
+        description=(
+            f"Welcome to **{member.guild.name}**!\n\n"
+            f"Please check the rules here: <#{RULES_CHANNEL_ID}>\n"
+            f"Say hi in {bot.get_channel(GENERAL_CHANNEL_ID).mention}!"
+        ),
+        color=discord.Color.random()
+    )
+
+    # Set GIF in the embed
+    embed.set_image(url=chosen_gif)
+
+    # Set server logo as thumbnail (small, bottom-right style)
+    embed.set_thumbnail(url="https://media.discordapp.net/attachments/1462141976618078352/1475968615592235119/hamrokurapfp.png?ex=699f6a64&is=699e18e4&hm=9cb78a311b2a9dddee75412f9c17370519dda44170eab4e08ff67ac617db221a&=&format=webp&quality=lossless&width=352&height=352")
+
+    # Footer with member count
+    embed.set_footer(text=f"You're member #{len(member.guild.members)}!")
+
+    await channel.send(embed=embed)
 # =========================
 # Config
 # =========================
