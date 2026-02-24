@@ -64,13 +64,6 @@ async def on_member_join(member):
     if not channel:
         return
 
-    # Random welcome GIFs
-    gifs = [
-        "https://media.giphy.com/media/OkJat1YNdoD3W/giphy.gif",
-        "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
-        "https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif"
-    ]
-    chosen_gif = random.choice(gifs)
 
     # Create the embed
     embed = discord.Embed(
@@ -84,7 +77,7 @@ async def on_member_join(member):
     )
 
     # Set GIF in the embed
-    embed.set_image(url=chosen_gif)
+    embed.set_image(url="https://static.klipy.com/ii/71b2873e478b9d8d0482ea3ec777ba7f/dc/a3/G01Q5M7K.gif")
 
     # Set server logo as thumbnail (small, bottom-right style)
     embed.set_thumbnail(url="https://media.discordapp.net/attachments/1462141976618078352/1475968615592235119/hamrokurapfp.png?ex=699f6a64&is=699e18e4&hm=9cb78a311b2a9dddee75412f9c17370519dda44170eab4e08ff67ac617db221a&=&format=webp&quality=lossless&width=352&height=352")
