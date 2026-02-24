@@ -10,6 +10,7 @@ import threading
 from flask import Flask
 import threading
 import time
+import json
 import requests
 import aiohttp
 # =========================
@@ -19,7 +20,17 @@ load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 ZENSERP_API_KEY = os.getenv("ZENSERP_API_KEY")
+USERS_FILE = "users.json"
 
+def load_users():
+    if not os.path.exists(USERS_FILE):
+        return []
+    with open(USERS_FILE, "r") as f:
+        return json.load(f)
+
+def save_users(users):
+    with open(USERS_FILE, "w") as f:
+        json.dump(users, f, indent=4)
 if not TOKEN:
     raise ValueError("DISCORD_TOKEN not found in environment variables")
 
@@ -574,6 +585,50 @@ async def google(ctx, *, query: str):
             if not ctx.channel.last_message or ctx.channel.last_message.author != bot.user:
                 await ctx.send("❌ Something went wrong while searching.")
 
+@bot.command()
+async def register(ctx):
+    users = load_users()
+    user_id = str(ctx.author.id)
+
+    if user_id in users:
+        await ctx.send("❌ You are already registered!")
+        return
+
+    users.append(user_id)
+    save_users(users)
+
+    await ctx.send("✅ You have been successfully registered!")
+
+@bot.command()
+async def signlist(ctx):
+    users = load_users()
+
+    if not users:
+        await ctx.send("No one is registered yet.")
+        return
+
+    message = "📋 **Registered Users:**\n"
+
+    for index, user_id in enumerate(users):
+        user = await bot.fetch_user(int(user_id))
+        message += f"{index + 1}. {user.name}#{user.discriminator}\n"
+
+    await ctx.send(message)
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def remove(ctx, member: discord.Member):
+    users = load_users()
+    user_id = str(member.id)
+
+    if user_id not in users:
+        await ctx.send("❌ That user is not registered.")
+        return
+
+    users.remove(user_id)
+    save_users(users)
+
+    await ctx.send(f"✅ {member.mention} has been removed from the list.")
 
 app = Flask(__name__)
 
