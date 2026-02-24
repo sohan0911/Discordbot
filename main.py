@@ -601,10 +601,10 @@ def is_allowed_channel():
 # 🎤 REGISTER COMMAND
 @bot.command()
 @is_allowed_channel()
-async def register(ctx):
+async def register(ctx,member: discord.Member ):
     users = load_users()
 
-    user_id = str(ctx.author.id)
+    user_id = str(member.id)
 
     if user_id in users:
         await ctx.send("⚠️ You are already registered.")
@@ -613,7 +613,7 @@ async def register(ctx):
     users.append(user_id)
     save_users(users)
 
-    await ctx.send(f"✅ {ctx.author.mention} has been registered!")
+    await ctx.send(f"✅ {member.mention} has been registered!")
 
 
 # 📋 SINGERS LIST (EMBED)
