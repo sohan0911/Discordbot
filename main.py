@@ -65,9 +65,12 @@ async def on_member_join(member):
     if not channel:
         return
 
+    channel2 = bot.get_channel(GENERAL_CHANNEL_ID)
+    if not channel2:
+        return
 
     # Create the embed
-    embed = discord.Embed(
+    embed1 = discord.Embed(
         title=f"🎉 Welcome {member.name}!",
         description=(
             f"Welcome to **{member.guild.name} , {member.mention}!**\n\n"
@@ -79,15 +82,32 @@ async def on_member_join(member):
     )
 
     # Set GIF in the embed
-    embed.set_image(url="https://static.klipy.com/ii/71b2873e478b9d8d0482ea3ec777ba7f/dc/a3/G01Q5M7K.gif")
+    embed1.set_image(url="https://static.klipy.com/ii/71b2873e478b9d8d0482ea3ec777ba7f/dc/a3/G01Q5M7K.gif")
 
     # Set server logo as thumbnail (small, bottom-right style)
-    embed.set_thumbnail(url="https://media.discordapp.net/attachments/1462141976618078352/1475968615592235119/hamrokurapfp.png?ex=699f6a64&is=699e18e4&hm=9cb78a311b2a9dddee75412f9c17370519dda44170eab4e08ff67ac617db221a&=&format=webp&quality=lossless&width=352&height=352")
+    embed1.set_thumbnail(url="https://media.discordapp.net/attachments/1462141976618078352/1475968615592235119/hamrokurapfp.png?ex=699f6a64&is=699e18e4&hm=9cb78a311b2a9dddee75412f9c17370519dda44170eab4e08ff67ac617db221a&=&format=webp&quality=lossless&width=352&height=352")
 
     # Footer with member count
-    embed.set_footer(text=f"You're member #{len(member.guild.members)}!")
+    embed1.set_footer(text=f"You're member #{len(member.guild.members)}!")
 
-    await channel.send(f"{member.mention}", embed=embed)
+    embed2 = discord.Embed(
+        title=f"🎉 Welcome {member.name}!",
+        description=(
+            f"Welcome to **{member.guild.name} , {member.mention}!**\n\n"
+            f"Take your time to introduce yourself and get familiar with the community: <#{intro_channel_id}>\n"
+            f"Everyone please welcome {member.mention}!"
+        ),
+        color=discord.Color.random()
+    )
+
+    # Set server logo as thumbnail (small, bottom-right style)
+    embed2.set_thumbnail(url="https://media.discordapp.net/attachments/1462141976618078352/1475968615592235119/hamrokurapfp.png?ex=699f6a64&is=699e18e4&hm=9cb78a311b2a9dddee75412f9c17370519dda44170eab4e08ff67ac617db221a&=&format=webp&quality=lossless&width=352&height=352")
+
+    # Footer with member count
+    embed2.set_footer(text=f"You're member #{len(member.guild.members)}!")
+
+    await channel.send(f"{member.mention}", embed=embed1)
+    await channel2.send(f"{member.mention}", embed=embed2)
 # =========================
 # Config
 # =========================
