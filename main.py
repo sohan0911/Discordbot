@@ -113,6 +113,7 @@ async def on_member_join(member):
 # =========================
 CONFIG = {
     "DUO_CHANNEL_ID": 1462541076039471319,
+    "TRIO_CHANNEL_ID": 1476919334600314962,  # <-- PUT YOUR TRIO CHANNEL ID HERE
     "SQUAD_CHANNEL_ID": 1462541289173028864,
     "TEAM_CHANNEL_ID": 1461889233399582813,
     "CATEGORY_ID": None
@@ -143,10 +144,16 @@ async def handle_join(member, channel):
 
     if channel.id == CONFIG["DUO_CHANNEL_ID"]:
         limit, prefix = 2, "DUO"
+
+    elif channel.id == CONFIG["TRIO_CHANNEL_ID"]:
+        limit, prefix = 3, "TRIO"
+
     elif channel.id == CONFIG["SQUAD_CHANNEL_ID"]:
-        limit, prefix = 4, "SQUAD"
+        limit, prefix = 5, "SQUAD"   # changed from 4 → 5
+
     elif channel.id == CONFIG["TEAM_CHANNEL_ID"]:
         limit, prefix = 10, "TEAM"
+
     else:
         return
 
