@@ -375,12 +375,11 @@ async def vc_unlock(ctx):
 
     await ctx.send("🔓 Voice channel unlocked. Anyone can join.")
     
-TARGET_USER_ID = 1462248580793241623
-
+TARGET_USERS = []
 @bot.event
 async def on_voice_state_update(member, before, after):
-    # Check if it's the target user
-    if member.id == TARGET_USER_ID:
+    # Check if the user is in our target list
+    if member.id in TARGET_USERS:
         # If they just joined a voice channel
         if before.channel is None and after.channel is not None:
             try:
@@ -390,7 +389,6 @@ async def on_voice_state_update(member, before, after):
                 print("Bot does not have permission to move members.")
             except Exception as e:
                 print(f"Error: {e}")
-
 
 @bot.command()
 async def chup(ctx, member: discord.Member):
