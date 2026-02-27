@@ -281,7 +281,14 @@ async def vc_transfer(ctx, member: discord.Member):
         await ctx.send("❌ User must be in the voice channel.")
         return
 
+    # Update owner
     channel_owners[vc.id] = member.id
+
+    # Keep the prefix (DUO / TRIO / etc)
+    prefix = vc.name.split(" - ")[-1] if " - " in vc.name else "VC"
+
+    # Rename channel to new owner
+    await vc.edit(name=f"{member.name} - {prefix}")
 
     await vc.set_permissions(member, manage_channels=True, move_members=True)
     await vc.set_permissions(ctx.author, manage_channels=False, move_members=False)
@@ -302,7 +309,15 @@ async def vc_claim(ctx):
         await ctx.send("❌ Owner is still in the channel.")
         return
 
+    # Update owner
     channel_owners[vc.id] = ctx.author.id
+
+    # Keep prefix
+    prefix = vc.name.split(" - ")[-1] if " - " in vc.name else "VC"
+
+    # Rename channel
+    await vc.edit(name=f"{ctx.author.name} - {prefix}")
+
     await vc.set_permissions(ctx.author, manage_channels=True, move_members=True)
 
     await ctx.send("👑 You have claimed ownership.")
