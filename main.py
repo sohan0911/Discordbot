@@ -193,7 +193,8 @@ async def handle_join(member, channel):
             name=f"{member.name} - {prefix}",
             category=category,
             user_limit=limit,
-            overwrites=overwrites
+            overwrites=overwrites,
+            bitrate=96000
         )
 
         await member.move_to(new_channel)
