@@ -553,7 +553,7 @@ async def rizz(ctx, member: discord.Member = None):
 # Message Moderation
 # =========================
 BAD_WORDS = {"lado", "machikney", "randi", "rando", "bhalu", "blueberry","arjun", "turi"}
-
+MUSIC_CHANNEL_ID = 1462141984025084008
 BAD_WORDS_PATTERN = re.compile(
     r"\b(" + "|".join(re.escape(word) for word in BAD_WORDS) + r")\b",
     re.IGNORECASE
@@ -564,14 +564,10 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    # Allow commands
-    await bot.process_commands(message)
-
-    # Greeting
-    if message.content.lower().startswith("hello"):
-        await message.channel.send(f"Hello {message.author.mention}!")
-
-    # Bad word detection (EXACT words only)
+    content = message.content.lower()
+    # =========================
+    # 2️⃣ Bad Word Detection
+    # =========================
     if BAD_WORDS_PATTERN.search(message.content):
         try:
             await message.delete()
@@ -583,35 +579,27 @@ async def on_message(message):
 
         await message.channel.send(
             content=message.author.mention,
-            embed=embed
+            embed=embed,
+            delete_after=5
         )
-
-# Roles that are NOT allowed to send links
-BLOCKED_ROLES = ["Citizens", "special", "Artist"]  # change to your role names
-
-@bot.event
-async def on_message(message):
-    if message.author.bot:
         return
 
-    # Check if user has one of the blocked roles
-    user_roles = [role.name for role in message.author.roles]
-    has_blocked_role = any(role in BLOCKED_ROLES for role in user_roles)
+    # =========================
+    # 3️⃣ Word Triggers (ONLY in specific channel)
+    # =========================
+    if message.channel.id == MUSIC_CHANNEL_ID:
 
-    # Simple link detection
-    link_keywords = ["discord.gg"]
+        # If message is exactly "f"
+        if content == "f":
+            await message.channel.send("Respect paid 🙏")
 
-    if has_blocked_role and any(word in message.content.lower() for word in link_keywords):
-        try:
-            await message.delete()
-            await message.channel.send(
-                f"{message.author.mention} ❌ You are not allowed to send invites.",
-                delete_after=5
-            )
-        except:
-            pass
-        return
+        # If message contains "babbal"
+        if "babbal" in content:
+            await message.channel.send("BABBAL DETECTED 🔥")
 
+    # =========================
+    # Always process commands LAST
+    # =========================
     await bot.process_commands(message)
 
 @bot.command()
