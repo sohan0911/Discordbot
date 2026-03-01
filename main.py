@@ -553,7 +553,7 @@ async def rizz(ctx, member: discord.Member = None):
 # Message Moderation
 # =========================
 BAD_WORDS = {"lado", "machikney", "randi", "rando", "bhalu", "blueberry","arjun", "turi"}
-MUSIC_CHANNEL_ID = 1462141984025084008
+MUSIC_CHANNEL_ID = 1462153175912943637
 BAD_WORDS_PATTERN = re.compile(
     r"\b(" + "|".join(re.escape(word) for word in BAD_WORDS) + r")\b",
     re.IGNORECASE
