@@ -22,6 +22,16 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 ZENSERP_API_KEY = os.getenv("ZENSERP_API_KEY")
 USERS_FILE = "users.json"
 
+def create_xp_bar(current_xp, required_xp, bar_length=15):
+    percent = current_xp / required_xp
+    filled_length = int(bar_length * percent)
+
+    bar = "█" * filled_length + "░" * (bar_length - filled_length)
+    percentage = int(percent * 100)
+
+    return bar, percentage
+
+
 def load_users():
     if not os.path.exists(USERS_FILE):
         return []
@@ -33,6 +43,20 @@ def save_users(users):
         json.dump(users, f, indent=4)
 if not TOKEN:
     raise ValueError("DISCORD_TOKEN not found in environment variables")
+
+LEVELS_FILE = "levels.json"
+
+def load_levels():
+    if not os.path.exists(LEVELS_FILE):
+        return {}
+    with open(LEVELS_FILE, "r") as f:
+        return json.load(f)
+
+def save_levels(data):
+    with open(LEVELS_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+levels = load_levels()
 
 # =========================
 # Logging
@@ -596,7 +620,47 @@ async def on_message(message):
         # If message contains "babbal"
         if "babbal" in content:
             await message.channel.send("BABBAL DETECTED 🔥")
+    # =========================
+    # XP SYSTEM
+    # =========================
+    user_id = str(message.author.id)
 
+    if user_id not in levels:
+        levels[user_id] = {"xp": 0, "level": 1}
+
+    # Random XP per message
+    xp_gain = random.randint(5, 15)
+    levels[user_id]["xp"] += xp_gain
+
+    current_level = levels[user_id]["level"]
+    xp_needed = current_level * 100
+
+    # Level Up Check
+    if levels[user_id]["xp"] >= xp_needed:
+        levels[user_id]["xp"] -= xp_needed
+        levels[user_id]["level"] += 1
+
+        await message.channel.send(
+            f"🎉 {message.author.mention} leveled up to **Level {levels[user_id]['level']}**!"
+        )
+
+        # Role Rewards
+        LEVEL_ROLES = {
+            5: 123456789012345678,   # Level 5 role ID
+            10: 987654321098765432   # Level 10 role ID
+        }
+
+        new_level = levels[user_id]["level"]
+
+        if new_level in LEVEL_ROLES:
+            role = message.guild.get_role(LEVEL_ROLES[new_level])
+            if role:
+                await message.author.add_roles(role)
+                await message.channel.send(
+                    f"🏆 {message.author.mention} earned the **{role.name}** role!"
+                )
+
+    save_levels(levels)
     # =========================
     # Always process commands LAST
     # =========================
@@ -726,6 +790,40 @@ async def remove(ctx, member: discord.Member):
 
     await ctx.send(f"🗑️ {member.mention} has been removed from the list.")
 
+
+@bot.command()
+async def profile(ctx, member: discord.Member = None):
+    member = member or ctx.author
+    user_id = str(member.id)
+
+    if user_id not in levels:
+        levels[user_id] = {"xp": 0, "level": 1}
+        save_levels(levels)
+
+    xp = levels[user_id]["xp"]
+    level = levels[user_id]["level"]
+    xp_needed = level * 100
+
+    bar, percentage = create_xp_bar(xp, xp_needed)
+
+    embed = discord.Embed(
+        title=f"{member.display_name}'s Profile",
+        color=0x3498db
+    )
+
+    embed.add_field(name="⭐ Level", value=level, inline=True)
+    embed.add_field(name="📊 XP", value=f"{xp}/{xp_needed}", inline=True)
+    embed.add_field(
+        name="Progress",
+        value=f"`{bar}`\n{percentage}%",
+        inline=False
+    )
+
+    embed.set_thumbnail(url=member.display_avatar.url)
+
+    await ctx.send(embed=embed)
+
+    
 app = Flask(__name__)
 
 @app.route("/")
