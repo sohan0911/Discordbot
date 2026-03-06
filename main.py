@@ -651,8 +651,10 @@ async def on_message(message):
             await message.channel.send("Respect paid 🙏")
         
         if content == "uff":
-            await message.channel.send(f"{message.author.mention} https://static.klipy.com/ii/35ccce3d852f7995dd2da910f2abd795/25/03/7fBW7jWy.gif")
-
+            embed = discord.Embed(color=0xff0000)
+            embed.set_image(url="https://static.klipy.com/ii/35ccce3d852f7995dd2da910f2abd795/25/03/7fBW7jWy.gif")
+            await message.channel.send(f"{message.author.mention} after listening to the music!", embed=embed)
+    
         # If message contains "babbal"
         if "babbal" in content:
             await message.channel.send("BABBAL DETECTED 🔥")
