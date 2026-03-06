@@ -696,6 +696,9 @@ async def on_message(message):
             response = random.choice(CUM_RESPONSES)
             await message.channel.send(response.format(user=message.author.mention))
 
+        elif content == "mommy":
+            await message.channel.send("<@1459629173604749524>")
+        
         # UFF reaction
         elif content == "uff":
             embed = discord.Embed(color=0xff0000)
