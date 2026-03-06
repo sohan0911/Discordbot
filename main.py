@@ -21,6 +21,8 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 ZENSERP_API_KEY = os.getenv("ZENSERP_API_KEY")
 USERS_FILE = "users.json"
+vc_tracking = {}
+xp_cooldowns = {}
 
 def create_xp_bar(current_xp, required_xp, bar_length=15):
     percent = current_xp / required_xp
@@ -45,6 +47,10 @@ if not TOKEN:
     raise ValueError("DISCORD_TOKEN not found in environment variables")
 
 LEVELS_FILE = "levels.json"
+import math
+
+def xp_required(level):
+    return int(50 * (level ** 1.5))
 
 def load_levels():
     if not os.path.exists(LEVELS_FILE):
@@ -161,6 +167,33 @@ async def on_voice_state_update(member, before, after):
 
     if before.channel and (not after.channel or before.channel.id != after.channel.id):
         await handle_leave(member, before.channel)
+    user_id = str(member.id)
+
+    # User joins VC
+    if after.channel and not before.channel:
+        vc_tracking[user_id] = time.time()
+
+    # User leaves VC
+    if before.channel and not after.channel:
+        if user_id in vc_tracking:
+            join_time = vc_tracking.pop(user_id)
+            time_spent = int((time.time() - join_time) / 60)  # minutes
+
+            if time_spent > 0:
+                if user_id not in levels:
+                    levels[user_id] = {"xp": 0, "level": 1}
+
+                levels[user_id]["xp"] += time_spent
+
+                current_level = levels[user_id]["level"]
+                required = xp_required(current_level)
+
+                while levels[user_id]["xp"] >= required:
+                    levels[user_id]["xp"] -= required
+                    levels[user_id]["level"] += 1
+                    required = xp_required(levels[user_id]["level"])
+
+                save_levels(levels)
 
 async def handle_join(member, channel):
     limit = 0
@@ -616,50 +649,62 @@ async def on_message(message):
         # If message is exactly "f"
         if content == "f":
             await message.channel.send("Respect paid 🙏")
+        
+        if content == "uff":
+            await message.channel.send("https://static.klipy.com/ii/35ccce3d852f7995dd2da910f2abd795/25/03/7fBW7jWy.gif")
 
         # If message contains "babbal"
         if "babbal" in content:
             await message.channel.send("BABBAL DETECTED 🔥")
     # =========================
-    # XP SYSTEM
+    # CHAT XP (1 XP per 30 sec)
     # =========================
     user_id = str(message.author.id)
+    now = time.time()
 
     if user_id not in levels:
         levels[user_id] = {"xp": 0, "level": 1}
 
-    # Random XP per message
-    xp_gain = random.randint(5, 15)
-    levels[user_id]["xp"] += xp_gain
+    # Check cooldown
+    if user_id not in xp_cooldowns or now - xp_cooldowns[user_id] >= 30:
+        levels[user_id]["xp"] += 1
+        xp_cooldowns[user_id] = now
 
-    current_level = levels[user_id]["level"]
-    xp_needed = current_level * 100
+        current_level = levels[user_id]["level"]
+        required = xp_required(current_level)
 
-    # Level Up Check
-    if levels[user_id]["xp"] >= xp_needed:
-        levels[user_id]["xp"] -= xp_needed
-        levels[user_id]["level"] += 1
+        if levels[user_id]["xp"] >= required:
+            levels[user_id]["xp"] -= required
+            levels[user_id]["level"] += 1
 
-        await message.channel.send(
-            f"🎉 {message.author.mention} leveled up to **Level {levels[user_id]['level']}**!"
-        )
+            await message.channel.send(
+                f"🎉 {message.author.mention} reached **Level {levels[user_id]['level']}**!"
+            )
 
-        # Role Rewards
-        LEVEL_ROLES = {
-            5: 123456789012345678,   # Level 5 role ID
-            10: 987654321098765432   # Level 10 role ID
-        }
+    LEVEL_ROLES = {
+        5: 111111111111111111,   # Level 5 role ID
+        10: 222222222222222222,  # Level 10 role ID
+        15: 333333333333333333,
+        20: 444444444444444444
+    }
+    async def update_level_roles(member, new_level):
+        # Get all level role IDs
+        level_role_ids = LEVEL_ROLES.values()
 
-        new_level = levels[user_id]["level"]
+        # Remove any existing level roles
+        for role_id in level_role_ids:
+            role = member.guild.get_role(role_id)
+            if role and role in member.roles:
+                await member.remove_roles(role)
 
+        # Give new role if level matches
         if new_level in LEVEL_ROLES:
-            role = message.guild.get_role(LEVEL_ROLES[new_level])
-            if role:
-                await message.author.add_roles(role)
-                await message.channel.send(
-                    f"🏆 {message.author.mention} earned the **{role.name}** role!"
-                )
+            new_role = member.guild.get_role(LEVEL_ROLES[new_level])
+            if new_role:
+                await member.add_roles(new_role)
+                return new_role
 
+        return None
     save_levels(levels)
     # =========================
     # Always process commands LAST
