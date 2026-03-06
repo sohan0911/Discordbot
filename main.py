@@ -1,4 +1,5 @@
 
+from email.mime import message
 import os
 import logging
 import discord
@@ -615,7 +616,31 @@ BAD_WORDS_PATTERN = re.compile(
     r"\b(" + "|".join(re.escape(word) for word in BAD_WORDS) + r")\b",
     re.IGNORECASE
 )
+trigger_cooldowns = {}
+TRIGGER_COOLDOWN = 10  # seconds
+F_RESPONSES = [
+    "🎤 {user} approves this singing 👌",
+    "👏 {user} says: that was clean!",
+    "🔥 {user} enjoyed that performance!",
+    "🎶 {user} is vibing with the singer!",
+    "💯 {user} says nice vocals!"
+]
 
+FF_RESPONSES = [
+    "🎤🔥 {user} says THAT WAS FIRE!",
+    "👏👏 {user} is impressed with those vocals!",
+    "🎶 {user} says the singer cooked!",
+    "💯 {user} says that voice is elite!",
+    "🔥 {user} is vibing HARD to that singing!"
+]
+
+CUM_RESPONSES = [
+    "🚨 {user} says THAT WAS INSANE VOCALS!",
+    "🎤💀 {user} just got blown away by that singing!",
+    "🔥 {user} says the singer absolutely COOKED!",
+    "🎶 {user} says this performance was legendary!",
+    "💎 {user} says those vocals were god tier!"
+]
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -646,18 +671,40 @@ async def on_message(message):
     # =========================
     if message.channel.id == MUSIC_CHANNEL_ID:
 
-        # If message is exactly "f"
+        user_id = message.author.id
+        now = time.time()
+
+    # Spam protection
+        if user_id in trigger_cooldowns:
+            if now - trigger_cooldowns[user_id] < TRIGGER_COOLDOWN:
+                return
+
+        trigger_cooldowns[user_id] = now
+
+        # F = nice
         if content == "f":
-            await message.channel.send("Respect paid 🙏")
-        
-        if content == "uff":
+            response = random.choice(F_RESPONSES)
+            await message.channel.send(response.format(user=message.author.mention))
+
+        # FF = very nice
+        elif content == "ff":
+            response = random.choice(FF_RESPONSES)
+            await message.channel.send(response.format(user=message.author.mention))
+
+        # INSANELY GOOD
+        elif content == "cum":
+            response = random.choice(CUM_RESPONSES)
+            await message.channel.send(response.format(user=message.author.mention))
+
+        # UFF reaction
+        elif content == "uff":
             embed = discord.Embed(color=0xff0000)
             embed.set_image(url="https://static.klipy.com/ii/35ccce3d852f7995dd2da910f2abd795/25/03/7fBW7jWy.gif")
-            await message.channel.send(f"{message.author.mention} after listening to the music!", embed=embed)
-    
-        # If message contains "babbal"
-        if "babbal" in content:
-            await message.channel.send("BABBAL DETECTED 🔥")
+
+            await message.channel.send(
+                f"🎧 {message.author.mention} after hearing those vocals!",
+                embed=embed
+            )
     # =========================
     # CHAT XP (1 XP per 30 sec)
     # =========================
