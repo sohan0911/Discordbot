@@ -655,6 +655,9 @@ async def on_message(message):
     # =========================
     # 2️⃣ Bad Word Detection
     # =========================
+    if content == "mommy" and message.author.id == 1139607940232384524:
+        await message.channel.send("<@1459629173604749524>")
+                
     if BAD_WORDS_PATTERN.search(message.content):
         try:
             await message.delete()
@@ -678,7 +681,7 @@ async def on_message(message):
 
         content = message.content.lower().strip()
 
-        if content in ["f", "ff", "cum", "uff", "mommy"]:
+        if content in ["f", "ff", "cum", "uff"]:
 
             user_id = message.author.id
             now = time.time()
@@ -731,8 +734,6 @@ async def on_message(message):
                     f"🎧 {message.author.mention} after hearing those vocals!",
                     embed=embed
                 )
-            elif content == "mommy":
-                await message.channel.send("<@1459629173604749524>")
     # =========================
     # CHAT XP (1 XP per 30 sec)
     # =========================
