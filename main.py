@@ -616,8 +616,13 @@ BAD_WORDS_PATTERN = re.compile(
     r"\b(" + "|".join(re.escape(word) for word in BAD_WORDS) + r")\b",
     re.IGNORECASE
 )
-trigger_cooldowns = {}
-TRIGGER_COOLDOWN = 10  # seconds
+from collections import defaultdict
+
+spam_tracker = defaultdict(list)
+
+SPAM_WINDOW = 5      # seconds
+SPAM_LIMIT = 10      # detect spam
+KEEP_MESSAGES = 5    # messages to keep
 F_RESPONSES = [
     "🎤 {user} approves this singing 👌",
     "👏 {user} says: that was clean!",
@@ -671,43 +676,64 @@ async def on_message(message):
     # =========================
     if message.channel.id == MUSIC_CHANNEL_ID:
 
-        user_id = message.author.id
-        now = time.time()
+        content = message.content.lower().strip()
 
-    # Spam protection
-        if user_id in trigger_cooldowns:
-            if now - trigger_cooldowns[user_id] < TRIGGER_COOLDOWN:
-                return
+        if content in ["f", "ff", "cum", "uff"]:
 
-        trigger_cooldowns[user_id] = now
+            user_id = message.author.id
+            now = time.time()
 
-        # F = nice
-        if content == "f":
-            response = random.choice(F_RESPONSES)
-            await message.channel.send(response.format(user=message.author.mention))
+            # Store message timestamps
+            spam_tracker[user_id].append(now)
 
-        # FF = very nice
-        elif content == "ff":
-            response = random.choice(FF_RESPONSES)
-            await message.channel.send(response.format(user=message.author.mention))
+            # Remove timestamps older than 5 sec
+            spam_tracker[user_id] = [
+                t for t in spam_tracker[user_id] if now - t < SPAM_WINDOW
+            ]
 
-        # INSANELY GOOD
-        elif content == "cum":
-            response = random.choice(CUM_RESPONSES)
-            await message.channel.send(response.format(user=message.author.mention))
+            # If spam detected
+            if len(spam_tracker[user_id]) > SPAM_LIMIT:
 
-        elif content == "mommy":
-            await message.channel.send("<@1459629173604749524>")
-        
-        # UFF reaction
-        elif content == "uff":
-            embed = discord.Embed(color=0xff0000)
-            embed.set_image(url="https://static.klipy.com/ii/35ccce3d852f7995dd2da910f2abd795/25/03/7fBW7jWy.gif")
+                messages = []
 
-            await message.channel.send(
-                f"🎧 {message.author.mention} after hearing those vocals!",
-                embed=embed
-            )
+                async for msg in message.channel.history(limit=20):
+                    if msg.author == message.author and msg.content.lower().strip() == content:
+                        messages.append(msg)
+
+                # delete extra messages (keep first 5)
+                for msg in messages[KEEP_MESSAGES:]:
+                    try:
+                        await msg.delete()
+                    except:
+                        pass
+
+            # F = nice
+            if content == "f":
+                response = random.choice(F_RESPONSES)
+                await message.channel.send(response.format(user=message.author.mention))
+
+            # FF = very nice
+            elif content == "ff":
+                response = random.choice(FF_RESPONSES)
+                await message.channel.send(response.format(user=message.author.mention))
+
+            # INSANELY GOOD
+            elif content == "cum":
+                response = random.choice(CUM_RESPONSES)
+                await message.channel.send(response.format(user=message.author.mention))
+
+            elif content == "mommy":
+                await message.channel.send("<@1459629173604749524>")
+            
+            # UFF reaction
+            elif content == "uff":
+                embed = discord.Embed(color=0xff0000)
+                embed.set_image(url="https://static.klipy.com/ii/35ccce3d852f7995dd2da910f2abd795/25/03/7fBW7jWy.gif")
+
+                await message.channel.send(
+                    f"🎧 {message.author.mention} after hearing those vocals!",
+                    embed=embed
+                )
     # =========================
     # CHAT XP (1 XP per 30 sec)
     # =========================
