@@ -721,9 +721,6 @@ async def on_message(message):
             elif content == "cum":
                 response = random.choice(CUM_RESPONSES)
                 await message.channel.send(response.format(user=message.author.mention))
-
-            elif content == "mommy":
-                await message.channel.send("<@1459629173604749524>")
             
             # UFF reaction
             elif content == "uff":
@@ -734,6 +731,8 @@ async def on_message(message):
                     f"🎧 {message.author.mention} after hearing those vocals!",
                     embed=embed
                 )
+            elif content == "mommy":
+                await message.channel.send("<@1459629173604749524>")
     # =========================
     # CHAT XP (1 XP per 30 sec)
     # =========================
