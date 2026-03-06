@@ -678,7 +678,7 @@ async def on_message(message):
 
         content = message.content.lower().strip()
 
-        if content in ["f", "ff", "cum", "uff"]:
+        if content in ["f", "ff", "cum", "uff", "mommy"]:
 
             user_id = message.author.id
             now = time.time()
