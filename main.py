@@ -651,7 +651,7 @@ async def on_message(message):
             await message.channel.send("Respect paid 🙏")
         
         if content == "uff":
-            await message.channel.send("https://static.klipy.com/ii/35ccce3d852f7995dd2da910f2abd795/25/03/7fBW7jWy.gif")
+            await message.channel.send(f"{message.author.mention} https://static.klipy.com/ii/35ccce3d852f7995dd2da910f2abd795/25/03/7fBW7jWy.gif")
 
         # If message contains "babbal"
         if "babbal" in content:
