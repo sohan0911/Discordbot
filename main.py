@@ -348,9 +348,6 @@ async def vc_transfer(ctx, member: discord.Member):
     # Rename channel to new owner
     await vc.edit(name=f"{member.name} - {prefix}")
 
-    await vc.set_permissions(member, manage_channels=True, move_members=True)
-    await vc.set_permissions(ctx.author, manage_channels=False, move_members=False)
-
     await ctx.send(f"👑 Ownership transferred to {member.mention}")
 
 @bot.command(name="vc-claim")
@@ -375,9 +372,6 @@ async def vc_claim(ctx):
 
     # Rename channel
     await vc.edit(name=f"{ctx.author.name} - {prefix}")
-
-    await vc.set_permissions(ctx.author, manage_channels=True, move_members=True)
-
     await ctx.send("👑 You have claimed ownership.")
 
 @bot.command(name="vc-owner")
