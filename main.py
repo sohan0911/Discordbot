@@ -721,7 +721,7 @@ async def on_message(message):
                 await message.channel.send(response.format(user=message.author.mention))
 
             # INSANELY GOOD
-            elif content == "cum":
+            elif content == "":
                 response = random.choice(CUM_RESPONSES)
                 await message.channel.send(response.format(user=message.author.mention))
             
