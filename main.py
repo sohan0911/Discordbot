@@ -454,6 +454,7 @@ async def vc_unlock(ctx):
 async def chup(ctx, member: discord.Member):
     await ctx.send(f"Chup muji {member.mention}")
 
+
 @bot.command()
 async def sut(ctx, member: discord.Member):
     await ctx.send(f"sut muji {member.mention}")
@@ -651,7 +652,10 @@ async def on_message(message):
     # =========================
     if content == "mommy" and message.author.id == 1139607940232384524:
         await message.channel.send("<@1459629173604749524>")
-                
+
+    if content == "sankar" and message.author.id == 1139607940232384524:
+        await message.channel.send("<@696711346359894078>")
+
     if BAD_WORDS_PATTERN.search(message.content):
         try:
             await message.delete()
