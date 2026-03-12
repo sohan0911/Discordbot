@@ -226,6 +226,7 @@ async def handle_join(member, channel):
             use_embedded_activities=True,
             use_voice_activation=True,
             stream=True,
+            use_external_apps=True
         ),
         member: discord.PermissionOverwrite(
             connect=True,
@@ -234,6 +235,7 @@ async def handle_join(member, channel):
             use_embedded_activities=True,
             use_voice_activation=True,
             stream=True,
+            use_external_apps=True
         ),
         guild.me: discord.PermissionOverwrite(
             connect=True,
@@ -242,6 +244,7 @@ async def handle_join(member, channel):
             use_embedded_activities=True,
             use_voice_activation=True,
             stream=True,
+            use_external_apps=True
         )
         }
     
