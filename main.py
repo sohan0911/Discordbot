@@ -815,7 +815,7 @@ async def register(ctx,member: discord.Member ):
         await ctx.send("🚫 You are blocked from registering.")
         return
     elif user_id in users:
-        await ctx.send("⚠️ You are already registered.")
+        await ctx.send("⚠️ That user is already registered.")
         return
 
     users.append(user_id)
@@ -843,8 +843,8 @@ async def participantslist(ctx):
 
     for index, user_id in enumerate(users):
         try:
-            user = await bot.get_user(int(user_id))
-            description += f"**{index + 1}.** {user.mention}\n"
+            # Mention the user instead of just showing their username
+            description += f"**{index + 1}.** <@{user_id}>\n"
         except:
             description += f"**{index + 1}.** Unknown User\n"
 
