@@ -790,12 +790,16 @@ async def on_message(message):
     # Always process commands LAST
     # =========================
     await bot.process_commands(message)
+
+
 ALLOWED_CHANNEL_ID = 1475925227816091900  # <-- PUT YOUR SINGERS CHANNEL ID HERE
+
+
 def is_allowed_channel():
     async def predicate(ctx):
         if ctx.channel.id != ALLOWED_CHANNEL_ID:
             await ctx.send("❌ This command only works in the singers channel.")
-            return False
+            raise commands.CheckFailure()
         return True
     return commands.check(predicate)
 
