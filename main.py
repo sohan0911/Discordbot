@@ -846,7 +846,7 @@ async def participantslist(ctx):
 
     for index, user_id in enumerate(users):
         try:
-            user = await bot.fetch_user(int(user_id))
+            user = bot.get_user(int(user_id))
             description += f"**{index + 1}.** {user.name}\n"
         except:
             description += f"**{index + 1}.** Unknown User\n"
