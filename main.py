@@ -793,7 +793,7 @@ async def on_message(message):
 
 
 ALLOWED_CHANNEL_ID = 1475925227816091900  # <-- PUT YOUR SINGERS CHANNEL ID HERE
-Blocked_Users = ["1139607940232384524"]  # To track blocked users
+Blocked_Users = ["705721612942704650", "825608322270232586", "1433860620993826938"]  # To track blocked users
 
 def is_allowed_channel():
     async def predicate(ctx):
