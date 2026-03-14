@@ -609,7 +609,7 @@ async def rizz(ctx, member: discord.Member = None):
 # =========================
 # Message Moderation
 # =========================
-BAD_WORDS = {"lado", "machikney", "randi", "rando", "bhalu", "blueberry","arjun", "turi"}
+BAD_WORDS = {"lado", "machikney", "randi", "rando", "bhalu","arjun", "turi"}
 MUSIC_CHANNEL_ID = 1462153175912943637
 BAD_WORDS_PATTERN = re.compile(
     r"\b(" + "|".join(re.escape(word) for word in BAD_WORDS) + r")\b",
@@ -791,65 +791,21 @@ async def on_message(message):
     # =========================
     await bot.process_commands(message)
 
-@bot.command()
-@commands.cooldown(1, 10, commands.BucketType.user)
-async def google(ctx, *, query: str):
-    async with ctx.channel.typing():
-        try:
-            url = "https://app.zenserp.com/api/v2/search"
-            params = {
-                "q": query,
-                "apikey": ZENSERP_API_KEY,
-                "gl": "us",
-                "hl": "en",
-                "num": 5
-            }
-
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params) as resp:
-                    if resp.status != 200:
-                        error_text = await resp.text()
-                        await ctx.send(f"❌ Zenserp API error {resp.status}")
-                        print(error_text)
-                        return
-
-                    data = await resp.json()
-
-            organic = data.get("organic")
-            if not organic:
-                await ctx.send("❌ No results found.")
-                return
-
-            message = f"🔎 **Results for:** {query}\n\n"
-
-            for i, result in enumerate(organic[:5], 1):
-                title = result.get("title", "No title")
-                link = result.get("url", "No link")
-                message += f"**{i}.** {title}\n{link}\n\n"
-
-            if len(message) > 2000:
-                message = message[:1990] + "..."
-
-            await ctx.send(message)
-
-        except Exception as e:
-            print("Zenserp error:", e)
-            # Only send error if nothing else was sent
-            if not ctx.channel.last_message or ctx.channel.last_message.author != bot.user:
-                await ctx.send("❌ Something went wrong while searching.")
-
 ALLOWED_CHANNEL_ID = 1475925227816091900
-
+BLOCKED_USERS = [705721612942704650, 825608322270232586]
 
 # 🔒 Channel restriction check
 def is_allowed_channel():
     async def predicate(ctx):
+        if ctx.author.id in BLOCKED_USERS:
+            await ctx.send("❌ You are not allowed to use this command.")
+            return False
+
         if ctx.channel.id != ALLOWED_CHANNEL_ID:
             await ctx.send("❌ This command only works in the singers channel.")
             return False
         return True
     return commands.check(predicate)
-
 
 # 🎤 REGISTER COMMAND
 @bot.command()
@@ -949,7 +905,6 @@ async def profile(ctx, member: discord.Member = None):
     await ctx.send(embed=embed)
 
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
-
 genai.configure(api_key=GEMINI_KEY)
 
 model = genai.GenerativeModel("gemini-2.5-flash")
