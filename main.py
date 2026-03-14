@@ -793,7 +793,7 @@ async def on_message(message):
 
 
 ALLOWED_CHANNEL_ID = 1475925227816091900  # <-- PUT YOUR SINGERS CHANNEL ID HERE
-
+Blocked_Users = ["1139607940232384524"]  # To track blocked users
 
 def is_allowed_channel():
     async def predicate(ctx):
@@ -811,8 +811,10 @@ async def register(ctx,member: discord.Member ):
     users = load_users()
 
     user_id = str(member.id)
-
-    if user_id in users:
+    if user_id in Blocked_Users:
+        await ctx.send("🚫 You are blocked from registering.")
+        return
+    elif user_id in users:
         await ctx.send("⚠️ You are already registered.")
         return
 
