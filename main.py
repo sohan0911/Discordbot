@@ -790,29 +790,24 @@ async def on_message(message):
     # Always process commands LAST
     # =========================
     await bot.process_commands(message)
-# 🔒 Channel restriction check
-ALLOWED_CHANNEL_ID = 1475925227816091900
-BLOCKED_USERS = [705721612942704650, 825608322270232586]
 
 def is_allowed_channel():
     async def predicate(ctx):
         if ctx.channel.id != ALLOWED_CHANNEL_ID:
             await ctx.send("❌ This command only works in the singers channel.")
-            raise commands.CheckFailure()
+            return False
         return True
     return commands.check(predicate)
+
 
 # 🎤 REGISTER COMMAND
 @bot.command()
 @is_allowed_channel()
 async def register(ctx,member: discord.Member ):
     users = load_users()
-    
+
     user_id = str(member.id)
-    if user_id in BLOCKED_USERS:
-        await ctx.send("❌ This user is not allowed to register.")
-        return
-    
+
     if user_id in users:
         await ctx.send("⚠️ You are already registered.")
         return
@@ -842,7 +837,7 @@ async def participantslist(ctx):
 
     for index, user_id in enumerate(users):
         try:
-            user = bot.get_user(int(user_id))
+            user = await bot.fetch_user(int(user_id))
             description += f"**{index + 1}.** {user.name}\n"
         except:
             description += f"**{index + 1}.** Unknown User\n"
@@ -868,7 +863,6 @@ async def remove(ctx, member: discord.Member):
     save_users(users)
 
     await ctx.send(f"🗑️ {member.mention} has been removed from the list.")
-
 
 @bot.command()
 async def profile(ctx, member: discord.Member = None):
