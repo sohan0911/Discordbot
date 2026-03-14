@@ -796,17 +796,10 @@ BLOCKED_USERS = [705721612942704650, 825608322270232586]
 
 def is_allowed_channel():
     async def predicate(ctx):
-
-        if ctx.author.id in BLOCKED_USERS:
-            await ctx.send("❌ You are not allowed to use this command.")
-            raise commands.CheckFailure()
-
         if ctx.channel.id != ALLOWED_CHANNEL_ID:
             await ctx.send("❌ This command only works in the singers channel.")
             raise commands.CheckFailure()
-
         return True
-
     return commands.check(predicate)
 
 # 🎤 REGISTER COMMAND
@@ -814,9 +807,12 @@ def is_allowed_channel():
 @is_allowed_channel()
 async def register(ctx,member: discord.Member ):
     users = load_users()
-
+    
     user_id = str(member.id)
-
+    if user_id in BLOCKED_USERS:
+        await ctx.send("❌ This user is not allowed to register.")
+        return
+    
     if user_id in users:
         await ctx.send("⚠️ You are already registered.")
         return
