@@ -812,7 +812,7 @@ async def register(ctx,member: discord.Member ):
 
     user_id = str(member.id)
     if user_id in Blocked_Users:
-        await ctx.send("🚫 You are blocked from registering.")
+        await ctx.send("🚫Chup muji Blueberry")
         return
     elif user_id in users:
         await ctx.send("⚠️ That user is already registered.")
