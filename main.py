@@ -790,21 +790,23 @@ async def on_message(message):
     # Always process commands LAST
     # =========================
     await bot.process_commands(message)
-
+# 🔒 Channel restriction check
 ALLOWED_CHANNEL_ID = 1475925227816091900
 BLOCKED_USERS = [705721612942704650, 825608322270232586]
 
-# 🔒 Channel restriction check
 def is_allowed_channel():
     async def predicate(ctx):
+
         if ctx.author.id in BLOCKED_USERS:
             await ctx.send("❌ You are not allowed to use this command.")
-            return False
+            raise commands.CheckFailure()
 
         if ctx.channel.id != ALLOWED_CHANNEL_ID:
             await ctx.send("❌ This command only works in the singers channel.")
-            return False
+            raise commands.CheckFailure()
+
         return True
+
     return commands.check(predicate)
 
 # 🎤 REGISTER COMMAND
