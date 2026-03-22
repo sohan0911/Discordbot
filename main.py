@@ -921,7 +921,106 @@ async def ai(ctx, *, prompt):
 
     except Exception as e:
         await ctx.reply(f"Error: {e}")
+
+# Contestants: discord.Member ID -> YouTube timestamp link
+contestants = {
+    697002937515376651: "https://youtu.be/4IIxeMP2DjY?t=796",  # Replace with actual user IDs and links
+    608118892904185895: "https://youtu.be/4IIxeMP2DjY?t=1040",
+    1206148401389903882: "https://youtu.be/4IIxeMP2DjY?t=1552",
+    786842001986420756: "https://youtu.be/4IIxeMP2DjY?t=1962",  # Replace with actual user IDs and links
+    748391976289697854: "https://youtu.be/4IIxeMP2DjY?t=2391",
+    759659855798599690: "https://youtu.be/4IIxeMP2DjY?t=2632",
+    1463016440956194900: "https://youtu.be/4IIxeMP2DjY?t=3311",  # Replace with actual user IDs and links
+    1109860448796422264: "https://youtu.be/4IIxeMP2DjY?t=3792",
+    1483327146364637305: "https://youtu.be/4IIxeMP2DjY?t=4620",
+    974351029724413992: "https://youtu.be/4IIxeMP2DjY?t=5174",  # Replace with actual user IDs and links
+    783905896513142794: "https://youtu.be/4IIxeMP2DjY?t=5711",
+    1101129163081007184: "https://youtu.be/4IIxeMP2DjY?t=6076",  # Replace with actual user IDs and links
+    925526483764670534: "https://youtu.be/4IIxeMP2DjY?t=6602",
+    929706204169637929: "https://youtu.be/4IIxeMP2DjY?t=7251",
+    759673378629615616: "https://youtu.be/4IIxeMP2DjY?t=7817",  # Replace with actual user IDs and links
+    802757116054077490: "https://youtu.be/4IIxeMP2DjY?t=8384",
+    935923651696541737: "https://youtu.be/4IIxeMP2DjY?t=9043",
+    1332611014876987425: "https://youtu.be/4IIxeMP2DjY?t=9486",  # Replace with actual user IDs and links
+    317414922164240384: "https://youtu.be/4IIxeMP2DjY?t=9763",
+    412041969288609813: "https://youtu.be/4IIxeMP2DjY?t=10318",
+    1312069927758331934: "https://youtu.be/4IIxeMP2DjY?t=10756",  # Replace with actual user IDs and links
+    842358123976720384: "https://youtu.be/4IIxeMP2DjY?t=11317",
+    1215322528449298482: "https://youtu.be/4IIxeMP2DjY?t=11726",  # Replace with actual user IDs and links
+    628688467659980801: "https://youtu.be/4IIxeMP2DjY?t=12218",
+    1248389166778028153: "https://youtu.be/4IIxeMP2DjY?t=12704",
+    1206677228742770698: "https://youtu.be/4IIxeMP2DjY?t=13328"  # Replace with actual user IDs and links
     
+}
+
+# Load votes from JSON
+try:
+    with open("votes.json", "r") as f:
+        votes_data = json.load(f)
+except FileNotFoundError:
+    votes_data = {"user_votes": {}, "vote_counts": {str(cid): 0 for cid in contestants}}
+    
+def save_votes():
+    with open("votes.json", "w") as f:
+        json.dump(votes_data, f)
+
+# Voting button class
+class VoteButton(discord.ui.View):
+    def __init__(self, contestant_id):
+        super().__init__(timeout=None)
+        self.contestant_id = str(contestant_id)
+
+    @discord.ui.button(label="Vote", style=discord.ButtonStyle.green)
+    async def vote(self, interaction: discord.Interaction, button: discord.ui.Button):
+        user_id = str(interaction.user.id)
+        user_voted_list = votes_data["user_votes"].get(user_id, [])
+
+        if self.contestant_id in user_voted_list:
+            await interaction.response.send_message(
+                f"You already voted for <@{self.contestant_id}>!", ephemeral=True
+            )
+            return
+
+        if len(user_voted_list) >= 3:
+            await interaction.response.send_message(
+                "You have already used your 3 votes!", ephemeral=True
+            )
+            return
+
+        # Record the vote
+        user_voted_list.append(self.contestant_id)
+        votes_data["user_votes"][user_id] = user_voted_list
+        votes_data["vote_counts"][self.contestant_id] += 1
+        save_votes()
+        await interaction.response.send_message(
+            f"You voted for <@{self.contestant_id}> ✅ ({len(user_voted_list)}/3 votes used)", ephemeral=True
+        )
+# Command to start voting
+@bot.command()
+async def start_vote(ctx):
+    for cid, yt_link in contestants.items():
+        member = ctx.guild.get_member(cid)
+        embed = discord.Embed(
+            title=f"{member.display_name}'s Performance",
+            description=f"[Watch Performance]({yt_link})",
+            color=discord.Color.random()
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.set_footer(text="Click the button below to vote! ✅")
+        view = VoteButton(cid)
+        await ctx.send(embed=embed, view=view)
+
+# Command to show leaderboard
+@bot.command()
+async def leaderboard(ctx):
+    text = "**🏆 Current Votes 🏆**\n"
+    sorted_votes = sorted(votes_data["vote_counts"].items(), key=lambda x: x[1], reverse=True)
+    for cid, count in sorted_votes:
+        member = ctx.guild.get_member(int(cid))
+        text += f"{member.display_name}: {count} votes\n"
+    await ctx.send(text)
+
+
 app = Flask(__name__)
 
 @app.route("/")
