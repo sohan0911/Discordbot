@@ -654,8 +654,6 @@ async def on_message(message):
     # =========================
     # 2️⃣ Bad Word Detection
     # =========================
-    if content == "mommy" and message.author.id == 1139607940232384524:
-        await message.channel.send("<@1459629173604749524>")
 
     if content == "sankar" and message.author.id == 1139607940232384524:
         await message.channel.send("<@696711346359894078>")
@@ -683,7 +681,7 @@ async def on_message(message):
 
         content = message.content.lower().strip()
 
-        if content in ["f", "ff", "cum", "uff"]:
+        if content in ["f", "ff", "w", "uff"]:
 
             user_id = message.author.id
             now = time.time()
@@ -723,7 +721,7 @@ async def on_message(message):
                 await message.channel.send(response.format(user=message.author.mention))
 
             # INSANELY GOOD
-            elif content == "":
+            elif content == "w":
                 response = random.choice(CUM_RESPONSES)
                 await message.channel.send(response.format(user=message.author.mention))
             
