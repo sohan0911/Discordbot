@@ -1000,14 +1000,32 @@ class VoteButton(discord.ui.View):
 async def start_vote(ctx):
     for cid, yt_link in contestants.items():
         member = ctx.guild.get_member(cid)
+
+        if member is None:
+            try:
+                member = await ctx.guild.fetch_member(cid)
+            except:
+                name = f"Left User ({cid})"
+                avatar = None
+            else:
+                name = member.display_name
+                avatar = member.display_avatar.url
+        else:
+            name = member.display_name
+            avatar = member.display_avatar.url
+
         embed = discord.Embed(
-            title=f"{member.display_name}'s Performance",
+            title=f"{name}'s Performance",
             description=f"[Watch Performance]({yt_link})",
             color=discord.Color.random()
         )
-        embed.set_thumbnail(url=member.display_avatar.url)
+
+        if avatar:
+            embed.set_thumbnail(url=avatar)
+
         embed.set_footer(text="Click the button below to vote! ✅")
         view = VoteButton(cid)
+
         await ctx.send(embed=embed, view=view)
 
 # Command to show leaderboard
