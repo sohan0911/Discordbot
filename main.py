@@ -1015,9 +1015,22 @@ async def start_vote(ctx):
 async def leaderboard(ctx):
     text = "**🏆 Current Votes 🏆**\n"
     sorted_votes = sorted(votes_data["vote_counts"].items(), key=lambda x: x[1], reverse=True)
+
     for cid, count in sorted_votes:
         member = ctx.guild.get_member(int(cid))
-        text += f"{member.display_name}: {count} votes\n"
+
+        if member is None:
+            try:
+                member = await ctx.guild.fetch_member(int(cid))
+            except:
+                name = f"Left Server ({cid})"
+            else:
+                name = member.display_name
+        else:
+            name = member.display_name
+
+        text += f"{name}: {count} votes\n"
+
     await ctx.send(text)
 
 
