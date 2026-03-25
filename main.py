@@ -1083,25 +1083,29 @@ judges_scores = {
  
 @bot.command()
 async def final_results(ctx):
-    # Ensure votes.json is loaded
+    # Load votes
     try:
         with open("votes.json", "r") as f:
-            votes_data = json.load(f)
+            data = json.load(f)
     except FileNotFoundError:
-        await ctx.send("No votes have been recorded yet!")
+        await ctx.send("No votes found.")
         return
 
-    vote_counts = votes_data.get("vote_counts", {})
+    vote_counts = data.get("vote_counts", {})
+
+    if not vote_counts:
+        await ctx.send("No votes have been cast yet.")
+        return
+
+    # Determine max votes
     max_votes = max(vote_counts.values()) if vote_counts else 1
 
-    final_results = []
+    # Build result embed
+    embed = discord.Embed(title="🏆 Final Results", color=0xFFD700)
 
-    for user_id, judges_score in judges_scores.items():
-        votes = vote_counts.get(str(user_id), 0)
-        voting_score = (votes / max_votes) * 10 if max_votes > 0 else 0
-        final_score = 0.3 * judges_score + 0.7 * voting_score
-
-        # Fetch username dynamically
+    for user_id_str, votes in vote_counts.items():
+        # Ensure string
+        user_id = int(user_id_str)
         member = ctx.guild.get_member(user_id)
         if member is None:
             try:
@@ -1112,32 +1116,9 @@ async def final_results(ctx):
         else:
             name = member.display_name
 
-        final_results.append({
-            "user_id": user_id,
-            "name": name,
-            "votes": votes,
-            "judges_score": judges_score,
-            "voting_score": round(voting_score, 2),
-            "final_score": round(final_score, 2)
-        })
-
-    # Sort by final score descending
-    final_results.sort(key=lambda x: x["final_score"], reverse=True)
-
-    # Create leaderboard embed
-    embed = discord.Embed(
-        title="🏆 Singing Competition Final Results 🏆",
-        color=discord.Color.gold()
-    )
-
-    medals = ["🥇", "🥈", "🥉"]
-
-    for i, r in enumerate(final_results):
-        medal = medals[i] if i < 3 else ""
         embed.add_field(
-            name=f"{medal} {i+1}. {r['name']}",
-            value=f"Final Score: {r['final_score']}\n"
-                  f"Judges: {r['judges_score']}/10 | Votes Score: {r['voting_score']}/10 ({r['votes']} votes)",
+            name=name,
+            value=f"Votes: {votes} | Score: {round((votes / max_votes) * 10, 2)} / 10",
             inline=False
         )
 
