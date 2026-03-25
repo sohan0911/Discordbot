@@ -1081,48 +1081,114 @@ judges_scores = {
     1206677228742770698: 7.5
 }
  
+class ResultsView(discord.ui.View):
+    def __init__(self, ctx, results, per_page=10):
+        super().__init__(timeout=120)
+        self.ctx = ctx
+        self.results = results
+        self.per_page = per_page
+        self.page = 0
+        self.max_page = (len(results) - 1) // per_page
+
+    def get_embed(self):
+        start = self.page * self.per_page
+        end = start + self.per_page
+        chunk = self.results[start:end]
+
+        embed = discord.Embed(
+            title="🏆 Final Results Leaderboard",
+            color=discord.Color.gold()
+        )
+
+        medals = ["🥇", "🥈", "🥉", "🏅"]
+
+        for i, r in enumerate(chunk):
+            global_index = start + i
+            medal = medals[global_index] if global_index < 4 else f"{global_index+1}."
+
+            # ✅ Get username safely (NO API CALLS)
+            member = self.ctx.guild.get_member(r['user_id'])
+            if member:
+                username = member.display_name  # nickname if exists
+            else:
+                user = self.ctx.bot.get_user(r['user_id'])
+                username = user.name if user else f"Unknown ({r['user_id']})"
+
+            embed.add_field(
+                name=f"{medal} {username}",
+                value=(
+                    f"**Final Score:** {r['final_score']:.2f}\n"
+                    f"Judges: {r['judges_score']:.2f}\n"
+                    f"Votes: {r['vote_score']:.2f} ({r['votes']} votes)"
+                ),
+                inline=False
+            )
+
+        embed.set_footer(text=f"Page {self.page+1}/{self.max_page+1}")
+        return embed
+    @discord.ui.button(label="⬅️ Previous", style=discord.ButtonStyle.gray)
+    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page > 0:
+            self.page -= 1
+            await interaction.response.edit_message(embed=self.get_embed(), view=self)
+        else:
+            await interaction.response.defer()
+
+    @discord.ui.button(label="➡️ Next", style=discord.ButtonStyle.gray)
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page < self.max_page:
+            self.page += 1
+            await interaction.response.edit_message(embed=self.get_embed(), view=self)
+        else:
+            await interaction.response.defer()
+
+
 @bot.command()
 async def final_results(ctx):
     # Load votes
     try:
         with open("votes.json", "r") as f:
-            data = json.load(f)
-    except FileNotFoundError:
+            votes_data = json.load(f)
+    except Exception as e:
+        await ctx.send(f"Error loading votes: {e}")
+        return
+
+    vote_counts = votes_data.get("vote_counts", {})
+    if not vote_counts:
         await ctx.send("No votes found.")
         return
 
-    vote_counts = data.get("vote_counts", {})
+    max_votes = max(vote_counts.values())
 
-    if not vote_counts:
-        await ctx.send("No votes have been cast yet.")
-        return
+    results = []
 
-    # Determine max votes
-    max_votes = max(vote_counts.values()) if vote_counts else 1
+    # Combine contestants
+    all_contestants = set(vote_counts.keys()) | set(map(str, judges_scores.keys()))
 
-    # Build result embed
-    embed = discord.Embed(title="🏆 Final Results", color=0xFFD700)
+    for user_id in all_contestants:
+        user_id_int = int(user_id)
 
-    for user_id_str, votes in vote_counts.items():
-        # Ensure string
-        user_id = int(user_id_str)
-        member = ctx.guild.get_member(user_id)
-        if member is None:
-            try:
-                member = await bot.fetch_user(user_id)
-                name = member.name
-            except:
-                name = f"Left Server ({user_id})"
-        else:
-            name = member.display_name
+        votes = vote_counts.get(user_id, 0)
+        judges_score = judges_scores.get(user_id_int, 0)
 
-        embed.add_field(
-            name=name,
-            value=f"Votes: {votes} | Score: {round((votes / max_votes) * 10, 2)} / 10",
-            inline=False
-        )
+        vote_score = (votes / max_votes) * 10 if max_votes > 0 else 0
+        final_score = (vote_score * 0.7) + (judges_score * 0.3)
 
-    await ctx.send(embed=embed)
+        results.append({
+            "user_id": user_id_int,
+            "votes": votes,
+            "vote_score": vote_score,
+            "judges_score": judges_score,
+            "final_score": final_score
+        })
+
+    # Sort
+    results.sort(key=lambda x: x["final_score"], reverse=True)
+
+    # Create paginated view
+    view = ResultsView(ctx, results)
+
+    await ctx.send(embed=view.get_embed(), view=view)
 
 app = Flask(__name__)
 
