@@ -1051,6 +1051,97 @@ async def leaderboard(ctx):
 
     await ctx.send(text)
 
+# Judges scores (plain)
+judges_scores = {
+    697002937515376651: 7.5,
+    608118892904185895: 8,
+    1206148401389903882: 7.5,
+    786842001986420756: 7.5,
+    748391976289697854: 7,
+    759659855798599690: 9,
+    1463016440956194900: 8.5,
+    1109860448796422264: 9,
+    1483327146364637305: 7,
+    974351029724413992: 8,
+    783905896513142794: 7.5,
+    1101129163081007184: 8.5,
+    925526483764670534: 7.5,
+    929706204169637929: 9,
+    759673378629615616: 8,
+    802757116054077490: 8,
+    935923651696541737: 7.5,
+    1332611014876987425: 8,
+    317414922164240384: 9,
+    412041969288609813: 8.5,
+    1312069927758331934: 8.5,
+    842358123976720384: 9.5,
+    1215322528449298482: 8,
+    628688467659980801: 8.5,
+    1248389166778028153: 8.5,
+    1206677228742770698: 7.5
+}
+ 
+@bot.command()
+async def final_results(ctx):
+    # Ensure votes.json is loaded
+    try:
+        with open("votes.json", "r") as f:
+            votes_data = json.load(f)
+    except FileNotFoundError:
+        await ctx.send("No votes have been recorded yet!")
+        return
+
+    vote_counts = votes_data.get("vote_counts", {})
+    max_votes = max(vote_counts.values()) if vote_counts else 1
+
+    final_results = []
+
+    for user_id, judges_score in judges_scores.items():
+        votes = vote_counts.get(str(user_id), 0)
+        voting_score = (votes / max_votes) * 10 if max_votes > 0 else 0
+        final_score = 0.3 * judges_score + 0.7 * voting_score
+
+        # Fetch username dynamically
+        member = ctx.guild.get_member(user_id)
+        if member is None:
+            try:
+                member = await bot.fetch_user(user_id)
+                name = member.name
+            except:
+                name = f"Left Server ({user_id})"
+        else:
+            name = member.display_name
+
+        final_results.append({
+            "user_id": user_id,
+            "name": name,
+            "votes": votes,
+            "judges_score": judges_score,
+            "voting_score": round(voting_score, 2),
+            "final_score": round(final_score, 2)
+        })
+
+    # Sort by final score descending
+    final_results.sort(key=lambda x: x["final_score"], reverse=True)
+
+    # Create leaderboard embed
+    embed = discord.Embed(
+        title="🏆 Singing Competition Final Results 🏆",
+        color=discord.Color.gold()
+    )
+
+    medals = ["🥇", "🥈", "🥉"]
+
+    for i, r in enumerate(final_results):
+        medal = medals[i] if i < 3 else ""
+        embed.add_field(
+            name=f"{medal} {i+1}. {r['name']}",
+            value=f"Final Score: {r['final_score']}\n"
+                  f"Judges: {r['judges_score']}/10 | Votes Score: {r['voting_score']}/10 ({r['votes']} votes)",
+            inline=False
+        )
+
+    await ctx.send(embed=embed)
 
 app = Flask(__name__)
 
