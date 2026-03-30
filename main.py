@@ -8,7 +8,7 @@ import re
 from discord.ext import commands
 from dotenv import load_dotenv
 import threading
-from flask import Flask
+from flask import Flask, ctx
 import threading
 import time
 import json
@@ -21,50 +21,6 @@ import google.generativeai as genai
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-ZENSERP_API_KEY = os.getenv("ZENSERP_API_KEY")
-USERS_FILE = "users.json"
-vc_tracking = {}
-xp_cooldowns = {}
-
-def create_xp_bar(current_xp, required_xp, bar_length=15):
-    percent = current_xp / required_xp
-    filled_length = int(bar_length * percent)
-
-    bar = "█" * filled_length + "░" * (bar_length - filled_length)
-    percentage = int(percent * 100)
-
-    return bar, percentage
-
-
-def load_users():
-    if not os.path.exists(USERS_FILE):
-        return []
-    with open(USERS_FILE, "r") as f:
-        return json.load(f)
-
-def save_users(users):
-    with open(USERS_FILE, "w") as f:
-        json.dump(users, f, indent=4)
-if not TOKEN:
-    raise ValueError("DISCORD_TOKEN not found in environment variables")
-
-LEVELS_FILE = "levels.json"
-import math
-
-def xp_required(level):
-    return int(50 * (level ** 1.5))
-
-def load_levels():
-    if not os.path.exists(LEVELS_FILE):
-        return {}
-    with open(LEVELS_FILE, "r") as f:
-        return json.load(f)
-
-def save_levels(data):
-    with open(LEVELS_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-
-levels = load_levels()
 
 # =========================
 # Logging
@@ -162,41 +118,6 @@ channel_owners = {}
 async def on_ready():
     print(f"✅ Logged in as {bot.user} ({bot.user.id})")
 
-@bot.event
-async def on_voice_state_update(member, before, after):
-    if after.channel and (not before.channel or before.channel.id != after.channel.id):
-        await handle_join(member, after.channel)
-
-    if before.channel and (not after.channel or before.channel.id != after.channel.id):
-        await handle_leave(member, before.channel)
-    user_id = str(member.id)
-
-    # User joins VC
-    if after.channel and not before.channel:
-        vc_tracking[user_id] = time.time()
-
-    # User leaves VC
-    if before.channel and not after.channel:
-        if user_id in vc_tracking:
-            join_time = vc_tracking.pop(user_id)
-            time_spent = int((time.time() - join_time) / 60)  # minutes
-
-            if time_spent > 0:
-                if user_id not in levels:
-                    levels[user_id] = {"xp": 0, "level": 1}
-
-                levels[user_id]["xp"] += time_spent
-
-                current_level = levels[user_id]["level"]
-                required = xp_required(current_level)
-
-                while levels[user_id]["xp"] >= required:
-                    levels[user_id]["xp"] -= required
-                    levels[user_id]["level"] += 1
-                    required = xp_required(levels[user_id]["level"])
-
-                save_levels(levels)
-
 async def handle_join(member, channel):
     limit = 0
     prefix = ""
@@ -275,7 +196,7 @@ async def handle_join(member, channel):
             "`!vc-owner` - Show current owner\n"
             "`!vc-kick @user` - Kick a user\n"
             "`!vc-ban @user` - Ban a user\n"
-            "`!vc-uban @user` - Unban a user\n"
+            "`!vc-unban @user` - Unban a user\n"
             "`!vc-lock` - Lock the channel\n"
             "`!vc-unlock` - Unlock the channel"
         ), inline=False)
@@ -418,7 +339,7 @@ async def vc_ban(ctx, member: discord.Member):
 
 @bot.command(name="vc-uban")
 @is_vc_owner()
-async def vc_uban(ctx, member: discord.Member):
+async def vc_unban(ctx, member: discord.Member):
     vc = get_user_vc(ctx)
 
     await vc.set_permissions(member, overwrite=None)
@@ -458,7 +379,6 @@ async def vc_unlock(ctx):
 async def chup(ctx, member: discord.Member):
     await ctx.send(f"Chup muji {member.mention}")
 
-
 @bot.command()
 async def sut(ctx, member: discord.Member):
     await ctx.send(f"sut muji {member.mention}")
@@ -468,6 +388,7 @@ async def sorry(ctx, member: discord.Member):
     embed = discord.Embed()
     embed.set_image(url="https://c.tenor.com/xcWphzVquJ8AAAAd/tenor.gif")
     await ctx.send(content=member.mention, embed=embed)
+
 
 ROASTS = [
     "yo momma so old her birth certificate says expired",
@@ -532,7 +453,6 @@ ROASTS = [
     "If I had just one wish, it would be that you step on a LEGO while barefoot today."
     ]
 
-
 @bot.command()
 async def roast(ctx, member: discord.Member):
     if member.bot:
@@ -541,7 +461,6 @@ async def roast(ctx, member: discord.Member):
 
     roast = random.choice(ROASTS)
     await ctx.send(f"🔥 {member.mention} {roast}")
-
 
 RIZZ = [
     "Timro nickname ta blanket hola hai, herdai patyau patyau lagne raixau. https://c.tenor.com/lkXE8nvV6JsAAAAd/tenor.gif",
@@ -638,7 +557,7 @@ FF_RESPONSES = [
     "🔥 {user} is vibing HARD to that singing!"
 ]
 
-CUM_RESPONSES = [
+W_RESPONSES = [
     "🚨 {user} says THAT WAS INSANE VOCALS!",
     "🎤💀 {user} just got blown away by that singing!",
     "🔥 {user} says the singer absolutely COOKED!",
@@ -657,6 +576,9 @@ async def on_message(message):
 
     if content == "sankar" and message.author.id == 1139607940232384524:
         await message.channel.send("<@696711346359894078>")
+    
+    if content == "aj" and message.author.id == 1459529835331321981:
+        await message.channel.send(f"<@&1488295231681204254> ")
 
     if BAD_WORDS_PATTERN.search(message.content):
         try:
@@ -673,6 +595,7 @@ async def on_message(message):
             delete_after=5
         )
         return
+
 
     # =========================
     # 3️⃣ Word Triggers (ONLY in specific channel)
@@ -722,7 +645,7 @@ async def on_message(message):
 
             # INSANELY GOOD
             elif content == "w":
-                response = random.choice(CUM_RESPONSES)
+                response = random.choice(W_RESPONSES)
                 await message.channel.send(response.format(user=message.author.mention))
             
             # UFF reaction
@@ -734,171 +657,7 @@ async def on_message(message):
                     f"🎧 {message.author.mention} after hearing those vocals!",
                     embed=embed
                 )
-    # =========================
-    # CHAT XP (1 XP per 30 sec)
-    # =========================
-    user_id = str(message.author.id)
-    now = time.time()
-
-    if user_id not in levels:
-        levels[user_id] = {"xp": 0, "level": 1}
-
-    # Check cooldown
-    if user_id not in xp_cooldowns or now - xp_cooldowns[user_id] >= 30:
-        levels[user_id]["xp"] += 1
-        xp_cooldowns[user_id] = now
-
-        current_level = levels[user_id]["level"]
-        required = xp_required(current_level)
-
-        if levels[user_id]["xp"] >= required:
-            levels[user_id]["xp"] -= required
-            levels[user_id]["level"] += 1
-
-            await message.channel.send(
-                f"🎉 {message.author.mention} reached **Level {levels[user_id]['level']}**!"
-            )
-
-    LEVEL_ROLES = {
-        5: 111111111111111111,   # Level 5 role ID
-        10: 222222222222222222,  # Level 10 role ID
-        15: 333333333333333333,
-        20: 444444444444444444
-    }
-    async def update_level_roles(member, new_level):
-        # Get all level role IDs
-        level_role_ids = LEVEL_ROLES.values()
-
-        # Remove any existing level roles
-        for role_id in level_role_ids:
-            role = member.guild.get_role(role_id)
-            if role and role in member.roles:
-                await member.remove_roles(role)
-
-        # Give new role if level matches
-        if new_level in LEVEL_ROLES:
-            new_role = member.guild.get_role(LEVEL_ROLES[new_level])
-            if new_role:
-                await member.add_roles(new_role)
-                return new_role
-
-        return None
-    save_levels(levels)
-    # =========================
-    # Always process commands LAST
-    # =========================
     await bot.process_commands(message)
-
-
-ALLOWED_CHANNEL_ID = 1475925227816091900  # <-- PUT YOUR SINGERS CHANNEL ID HERE
-Blocked_Users = ["705721612942704650", "825608322270232586", "1433860620993826938"]  # To track blocked users
-
-def is_allowed_channel():
-    async def predicate(ctx):
-        if ctx.channel.id != ALLOWED_CHANNEL_ID:
-            await ctx.send("❌ This command only works in the singers channel.")
-            raise commands.CheckFailure()
-        return True
-    return commands.check(predicate)
-
-
-# 🎤 REGISTER COMMAND
-@bot.command()
-@is_allowed_channel()
-async def register(ctx,member: discord.Member ):
-    users = load_users()
-
-    user_id = str(member.id)
-    if user_id in Blocked_Users:
-        await ctx.send("🚫Chup muji Blueberry")
-        return
-    elif user_id in users:
-        await ctx.send("⚠️ That user is already registered.")
-        return
-
-    users.append(user_id)
-    save_users(users)
-
-    await ctx.send(f"✅ {member.mention} has been registered!")
-
-
-# 📋 SINGERS LIST (EMBED)
-@bot.command()
-@is_allowed_channel()
-async def participantslist(ctx):
-    users = load_users()
-
-    if not users:
-        await ctx.send("No one is registered yet.")
-        return
-
-    embed = discord.Embed(
-        title="🎤 Registered Singers",
-        color=0x3498db
-    )
-
-    description = ""
-
-    for index, user_id in enumerate(users):
-        try:
-            # Mention the user instead of just showing their username
-            description += f"**{index + 1}.** <@{user_id}>\n"
-        except:
-            description += f"**{index + 1}.** Unknown User\n"
-
-    embed.description = description
-    embed.set_footer(text="Commands only work in this channel.")
-
-    await ctx.send(embed=embed)
-
-
-# ❌ REMOVE USER COMMAND
-@bot.command()
-@is_allowed_channel()
-async def remove(ctx, member: discord.Member):
-    users = load_users()
-    user_id = str(member.id)
-
-    if user_id not in users:
-        await ctx.send("❌ That user is not registered.")
-        return
-
-    users.remove(user_id)
-    save_users(users)
-
-    await ctx.send(f"🗑️ {member.mention} has been removed from the list.")
-
-@bot.command()
-async def profile(ctx, member: discord.Member = None):
-    member = member or ctx.author
-    user_id = str(member.id)
-
-    if user_id not in levels:
-        levels[user_id] = {"xp": 0, "level": 1}
-        save_levels(levels)
-
-    xp = levels[user_id]["xp"]
-    level = levels[user_id]["level"]
-    xp_needed = level * 100
-
-    bar, percentage = create_xp_bar(xp, xp_needed)
-
-    embed = discord.Embed(
-        title=f"{member.display_name}'s Profile",
-        color=0x3498db
-    )
-
-    embed.add_field(name="⭐ Level", value=level, inline=True)
-    embed.add_field(name="📊 XP", value=f"{xp}/{xp_needed}", inline=True)
-    embed.add_field(
-        name="Progress",
-        value=f"`{bar}`\n{percentage}%",
-        inline=False
-    )
-
-    embed.set_thumbnail(url=member.display_avatar.url)
-
-    await ctx.send(embed=embed)
 
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_KEY)
@@ -922,273 +681,163 @@ async def ai(ctx, *, prompt):
     except Exception as e:
         await ctx.reply(f"Error: {e}")
 
-# Contestants: discord.Member ID -> YouTube timestamp link
-contestants = {
-    697002937515376651: "https://youtu.be/4IIxeMP2DjY?t=796",  # Replace with actual user IDs and links
-    608118892904185895: "https://youtu.be/4IIxeMP2DjY?t=1040",
-    1206148401389903882: "https://youtu.be/4IIxeMP2DjY?t=1552",
-    786842001986420756: "https://youtu.be/4IIxeMP2DjY?t=1962",  # Replace with actual user IDs and links
-    748391976289697854: "https://youtu.be/4IIxeMP2DjY?t=2391",
-    759659855798599690: "https://youtu.be/4IIxeMP2DjY?t=2632",
-    1463016440956194900: "https://youtu.be/4IIxeMP2DjY?t=3311",  # Replace with actual user IDs and links
-    1109860448796422264: "https://youtu.be/4IIxeMP2DjY?t=3792",
-    1483327146364637305: "https://youtu.be/4IIxeMP2DjY?t=4620",
-    974351029724413992: "https://youtu.be/4IIxeMP2DjY?t=5174",  # Replace with actual user IDs and links
-    783905896513142794: "https://youtu.be/4IIxeMP2DjY?t=5711",
-    1101129163081007184: "https://youtu.be/4IIxeMP2DjY?t=6076",  # Replace with actual user IDs and links
-    925526483764670534: "https://youtu.be/4IIxeMP2DjY?t=6602",
-    929706204169637929: "https://youtu.be/4IIxeMP2DjY?t=7251",
-    759673378629615616: "https://youtu.be/4IIxeMP2DjY?t=7817",  # Replace with actual user IDs and links
-    802757116054077490: "https://youtu.be/4IIxeMP2DjY?t=8384",
-    935923651696541737: "https://youtu.be/4IIxeMP2DjY?t=9043",
-    1332611014876987425: "https://youtu.be/4IIxeMP2DjY?t=9486",  # Replace with actual user IDs and links
-    317414922164240384: "https://youtu.be/4IIxeMP2DjY?t=9763",
-    412041969288609813: "https://youtu.be/4IIxeMP2DjY?t=10318",
-    1312069927758331934: "https://youtu.be/4IIxeMP2DjY?t=10756",  # Replace with actual user IDs and links
-    842358123976720384: "https://youtu.be/4IIxeMP2DjY?t=11317",
-    1215322528449298482: "https://youtu.be/4IIxeMP2DjY?t=11726",  # Replace with actual user IDs and links
-    628688467659980801: "https://youtu.be/4IIxeMP2DjY?t=12218",
-    1248389166778028153: "https://youtu.be/4IIxeMP2DjY?t=12704",
-    1206677228742770698: "https://youtu.be/4IIxeMP2DjY?t=13328"  # Replace with actual user IDs and links
-    
-}
+DATA_FILE = "participants.json" 
+ALLOWED_CHANNEL_ID = 1488311639936598147
+# ------------------ FILE HANDLING ------------------
+def load_data():
+    if not os.path.exists(DATA_FILE):
+        return {"teams": []}
 
-# Load votes from JSON
-try:
-    with open("votes.json", "r") as f:
-        votes_data = json.load(f)
-except FileNotFoundError:
-    votes_data = {"user_votes": {}, "vote_counts": {str(cid): 0 for cid in contestants}}
-    
-def save_votes():
-    with open("votes.json", "w") as f:
-        json.dump(votes_data, f)
-
-# Voting button class
-class VoteButton(discord.ui.View):
-    def __init__(self, contestant_id):
-        super().__init__(timeout=None)
-        self.contestant_id = str(contestant_id)
-
-    @discord.ui.button(label="Vote", style=discord.ButtonStyle.green)
-    async def vote(self, interaction: discord.Interaction, button: discord.ui.Button):
-        user_id = str(interaction.user.id)
-        user_voted_list = votes_data["user_votes"].get(user_id, [])
-
-        if self.contestant_id in user_voted_list:
-            await interaction.response.send_message(
-                f"You already voted for <@{self.contestant_id}>!", ephemeral=True
-            )
-            return
-
-        if len(user_voted_list) >= 3:
-            await interaction.response.send_message(
-                "You have already used your 3 votes!", ephemeral=True
-            )
-            return
-
-        # Record the vote
-        user_voted_list.append(self.contestant_id)
-        votes_data["user_votes"][user_id] = user_voted_list
-        votes_data["vote_counts"][self.contestant_id] += 1
-        save_votes()
-        await interaction.response.send_message(
-            f"You voted for <@{self.contestant_id}> ✅ ({len(user_voted_list)}/3 votes used)", ephemeral=True
-        )
-# Command to start voting
-@bot.command()
-async def start_vote(ctx):
-    for cid, yt_link in contestants.items():
-        member = ctx.guild.get_member(cid)
-
-        if member is None:
-            try:
-                member = await ctx.guild.fetch_member(cid)
-            except:
-                name = f"Left User ({cid})"
-                avatar = None
-            else:
-                name = member.display_name
-                avatar = member.display_avatar.url
-        else:
-            name = member.display_name
-            avatar = member.display_avatar.url
-
-        embed = discord.Embed(
-            title=f"{name}'s Performance",
-            description=f"[Watch Performance]({yt_link})",
-            color=discord.Color.random()
-        )
-
-        if avatar:
-            embed.set_thumbnail(url=avatar)
-
-        embed.set_footer(text="Click the button below to vote! ✅")
-        view = VoteButton(cid)
-
-        await ctx.send(embed=embed, view=view)
-
-# Command to show leaderboard
-@bot.command()
-async def leaderboard(ctx):
-    text = "**🏆 Current Votes 🏆**\n"
-    sorted_votes = sorted(votes_data["vote_counts"].items(), key=lambda x: x[1], reverse=True)
-
-    for cid, count in sorted_votes:
-        member = ctx.guild.get_member(int(cid))
-
-        if member is None:
-            try:
-                member = await ctx.guild.fetch_member(int(cid))
-            except:
-                name = f"Left Server ({cid})"
-            else:
-                name = member.display_name
-        else:
-            name = member.display_name
-
-        text += f"{name}: {count} votes\n"
-
-    await ctx.send(text)
-
-# Judges scores (plain)
-judges_scores = {
-    697002937515376651: 7.5,
-    608118892904185895: 8,
-    1206148401389903882: 7.5,
-    786842001986420756: 7.5,
-    748391976289697854: 7,
-    759659855798599690: 9,
-    1463016440956194900: 8.5,
-    1109860448796422264: 9,
-    1483327146364637305: 7,
-    974351029724413992: 8,
-    783905896513142794: 7.5,
-    1101129163081007184: 8.5,
-    925526483764670534: 7.5,
-    929706204169637929: 9,
-    759673378629615616: 8,
-    802757116054077490: 8,
-    935923651696541737: 7.5,
-    1332611014876987425: 8,
-    317414922164240384: 9,
-    412041969288609813: 8.5,
-    1312069927758331934: 8.5,
-    842358123976720384: 9.5,
-    1215322528449298482: 8,
-    628688467659980801: 8.5,
-    1248389166778028153: 8.5,
-    1206677228742770698: 7.5
-}
- 
-class ResultsView(discord.ui.View):
-    def __init__(self, ctx, results, per_page=10):
-        super().__init__(timeout=120)
-        self.ctx = ctx
-        self.results = results
-        self.per_page = per_page
-        self.page = 0
-        self.max_page = (len(results) - 1) // per_page
-
-    def get_embed(self):
-        start = self.page * self.per_page
-        end = start + self.per_page
-        chunk = self.results[start:end]
-
-        embed = discord.Embed(
-            title="🏆 Final Results Leaderboard",
-            color=discord.Color.gold()
-        )
-
-        medals = ["🥇", "🥈", "🥉", "🏅"]
-
-        for i, r in enumerate(chunk):
-            global_index = start + i
-            medal = medals[global_index] if global_index < 4 else f"{global_index+1}."
-
-            # ✅ Get username safely (NO API CALLS)
-            member = self.ctx.guild.get_member(r['user_id'])
-            if member:
-                username = member.display_name  # nickname if exists
-            else:
-                user = self.ctx.bot.get_user(r['user_id'])
-                username = user.name if user else f"Unknown ({r['user_id']})"
-
-            embed.add_field(
-                name=f"{medal} {username}",
-                value=(
-                    f"**Final Score:** {r['final_score']:.2f}\n"
-                    f"Judges: {r['judges_score']:.2f}\n"
-                    f"Votes: {r['vote_score']:.2f} ({r['votes']} votes)"
-                ),
-                inline=False
-            )
-
-        embed.set_footer(text=f"Page {self.page+1}/{self.max_page+1}")
-        return embed
-    @discord.ui.button(label="⬅️ Previous", style=discord.ButtonStyle.gray)
-    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.page > 0:
-            self.page -= 1
-            await interaction.response.edit_message(embed=self.get_embed(), view=self)
-        else:
-            await interaction.response.defer()
-
-    @discord.ui.button(label="➡️ Next", style=discord.ButtonStyle.gray)
-    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.page < self.max_page:
-            self.page += 1
-            await interaction.response.edit_message(embed=self.get_embed(), view=self)
-        else:
-            await interaction.response.defer()
-
-
-@bot.command()
-async def final_results(ctx):
-    # Load votes
     try:
-        with open("votes.json", "r") as f:
-            votes_data = json.load(f)
-    except Exception as e:
-        await ctx.send(f"Error loading votes: {e}")
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        # File is empty or broken → reset it
+        data = {"teams": []}
+        save_data(data)
+        return data
+
+def save_data(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+
+def is_allowed_channel(ctx):
+    return ctx.channel.id == ALLOWED_CHANNEL_ID
+
+
+# ------------------ EMBEDS ------------------
+def format_error_embed():
+    embed = discord.Embed(
+        title="❌ Invalid Command Usage",
+        description="You used the command incorrectly.",
+        color=discord.Color.red()
+    )
+
+    embed.add_field(
+        name="✅ Correct Format",
+        value="```!register TeamName @member1 @member2 @member3 @member4```",
+        inline=False
+    )
+
+    embed.add_field(
+        name="⚠️ Rules",
+        value=(
+            "- You must mention 4 different users\n"
+            "- No duplicate members\n"
+            "- Use this command in the correct channel"
+        ),
+        inline=False
+    )
+
+    return embed
+
+
+def success_embed(team_name, members):
+    embed = discord.Embed(
+        title="✅ Team Registered Successfully!",
+        color=discord.Color.green()
+    )
+
+    embed.add_field(name="Team Name", value=team_name, inline=False)
+    embed.add_field(
+        name="Members",
+        value=" ".join([m.mention for m in members]),
+        inline=False
+    )
+
+    return embed
+
+
+# ------------------ COMMAND ------------------
+@bot.command()
+async def register(ctx, team_name: str, member1: discord.Member, member2: discord.Member, member3: discord.Member, member4: discord.Member):
+
+    # Channel check
+    if not is_allowed_channel(ctx):
+        await ctx.send("❌ You can only register in the designated channel.")
         return
 
-    vote_counts = votes_data.get("vote_counts", {})
-    if not vote_counts:
-        await ctx.send("No votes found.")
+    data = load_data()
+    members = [member1, member2, member3, member4]
+
+    # Duplicate team name check
+    for team in data["teams"]:
+        if team["team_name"].lower() == team_name.lower():
+            await ctx.send(f"❌ Team **{team_name}** already exists!")
+            return
+
+    # Duplicate members in same team
+    if len(set(m.id for m in members)) < 4:
+        await ctx.send("❌ You cannot mention the same user more than once.")
         return
 
-    max_votes = max(vote_counts.values())
+    # OPTIONAL: Prevent users joining multiple teams
+    existing_players = [mid for team in data["teams"] for mid in team["members"]]
+    for m in members:
+        if m.id in existing_players:
+            await ctx.send(f"❌ {m.mention} is already in another team!")
+            return
 
-    results = []
+    # Save team
+    new_team = {
+        "team_name": team_name,
+        "members": [m.id for m in members],
+        "registered_by": ctx.author.id
+    }
 
-    # Combine contestants
-    all_contestants = set(vote_counts.keys()) | set(map(str, judges_scores.keys()))
+    data["teams"].append(new_team)
+    save_data(data)
 
-    for user_id in all_contestants:
-        user_id_int = int(user_id)
+    await ctx.send(embed=success_embed(team_name, members))
 
-        votes = vote_counts.get(user_id, 0)
-        judges_score = judges_scores.get(user_id_int, 0)
 
-        vote_score = (votes / max_votes) * 10 if max_votes > 0 else 0
-        final_score = (vote_score * 0.7) + (judges_score * 0.3)
+# ------------------ ERROR HANDLER ------------------
+@register.error
+async def register_error(ctx, error):
 
-        results.append({
-            "user_id": user_id_int,
-            "votes": votes,
-            "vote_score": vote_score,
-            "judges_score": judges_score,
-            "final_score": final_score
-        })
+    if not is_allowed_channel(ctx):
+        return
 
-    # Sort
-    results.sort(key=lambda x: x["final_score"], reverse=True)
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(embed=format_error_embed())
 
-    # Create paginated view
-    view = ResultsView(ctx, results)
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send(embed=format_error_embed())
 
-    await ctx.send(embed=view.get_embed(), view=view)
+    else:
+        await ctx.send("⚠️ An unexpected error occurred.")
+        print(error)
+
+
+    # ------------------ VIEW TEAMS ------------------
+@bot.command()
+async def teams(ctx):
+
+    if not is_allowed_channel(ctx):
+        return
+
+    data = load_data()
+
+    if not data["teams"]:
+        await ctx.send("No teams registered yet.")
+        return
+
+    embed = discord.Embed(
+        title="📋 Registered Teams",
+        color=discord.Color.blue()
+    )
+
+    for team in data["teams"]:
+        members = " ".join([f"<@{mid}>" for mid in team["members"]])
+        embed.add_field(
+            name=f"🔹 {team['team_name']}",
+            value=members,
+            inline=False
+        )
+
+    await ctx.send(embed=embed)
+
 
 app = Flask(__name__)
 
