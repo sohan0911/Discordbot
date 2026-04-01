@@ -118,6 +118,15 @@ channel_owners = {}
 async def on_ready():
     print(f"✅ Logged in as {bot.user} ({bot.user.id})")
 
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if after.channel and (not before.channel or before.channel.id != after.channel.id):
+        await handle_join(member, after.channel)
+
+    if before.channel and (not after.channel or before.channel.id != after.channel.id):
+        await handle_leave(member, before.channel)
+    user_id = str(member.id)
+
 async def handle_join(member, channel):
     limit = 0
     prefix = ""
