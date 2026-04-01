@@ -534,6 +534,57 @@ async def rizz(ctx, member: discord.Member = None):
         await ctx.send(embed=embed)
 
 
+ALLOWED_USER_IDS = [
+    1441687923782062151,
+    849537205725954058,
+    1416509223399063582,
+    1014412475908767785
+]
+
+@bot.command()
+async def move(ctx, *args):
+
+    # 🔒 Check if user is in allowed list
+    if ctx.author.id not in ALLOWED_USER_IDS:
+        try:
+            await ctx.message.delete()
+        except:
+            pass
+        return
+
+    # 🧹 Delete command message
+    try:
+        await ctx.message.delete()
+    except:
+        pass
+
+    if len(args) < 2:
+        return
+
+    # 🎯 Last argument = channel ID
+    try:
+        channel_id = int(args[-1])
+    except:
+        return
+
+    channel = ctx.guild.get_channel(channel_id)
+
+    if not channel or not isinstance(channel, discord.VoiceChannel):
+        return
+
+    # 👥 Get mentioned users
+    members = ctx.message.mentions
+
+    if not members:
+        return
+
+    # 🚀 Move users
+    for member in members:
+        if member.voice and member.voice.channel:
+            try:
+                await member.move_to(channel)
+            except:
+                pass
 # =========================
 # Message Moderation
 # =========================
