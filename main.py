@@ -888,7 +888,63 @@ async def participants(ctx):
 
     await ctx.send(embed=embed)
 
+@bot.command()
+async def ludomatch(ctx):
 
+    if not is_allowed_channel(ctx):
+        return
+
+    data = load_data()
+
+    if not data["teams"]:
+        await ctx.send("❌ No participants registered.")
+        return
+
+    # Get all participants
+    participants = [entry["members"][0] for entry in data["teams"]]
+
+    # Shuffle players
+    random.shuffle(participants)
+
+    matches = []
+    waiting = []
+
+    # Create groups of 4
+    for i in range(0, len(participants), 4):
+        group = participants[i:i+4]
+        if len(group) == 4:
+            matches.append(group)
+        else:
+            waiting.extend(group)
+
+    # Create embed
+    embed = discord.Embed(
+        title="🎲 Ludo Matchmaking",
+        description="4 players per match. Winner advances.",
+        color=discord.Color.gold()
+    )
+
+    # Add matches
+    for idx, match in enumerate(matches, start=1):
+        players = "\n".join([f"• <@{p}>" for p in match])
+        embed.add_field(
+            name=f"🎮 Match {idx}",
+            value=players,
+            inline=False
+        )
+
+    # Add waiting list
+    if waiting:
+        wait_list = " ".join([f"<@{p}>" for p in waiting])
+        embed.add_field(
+            name="🪑 Waiting List",
+            value=wait_list,
+            inline=False
+        )
+
+    await ctx.send(embed=embed)
+
+    
 app = Flask(__name__)
 
 @app.route("/")
