@@ -893,7 +893,8 @@ async def ludomatch(ctx):
 
     if not is_allowed_channel(ctx):
         return
-
+    if not is_allowed_channel(ctx):
+        return
     data = load_data()
 
     if not data["teams"]:
@@ -944,6 +945,7 @@ async def ludomatch(ctx):
 
     await ctx.send(embed=embed)
 
+Admins = [1139607940232384524, 1462248580793241623, 1257369692730036466]
 @bot.command()
 async def unregister(ctx, member: discord.Member = None):
 
@@ -956,6 +958,9 @@ async def unregister(ctx, member: discord.Member = None):
     if member is None:
         member = ctx.author
 
+    if member != ctx.author and not ctx.author.id in Admins:
+        await ctx.send("❌ You can only unregister yourself.")
+        return
     # Check if user exists
     found = False
     for entry in data["teams"]:
