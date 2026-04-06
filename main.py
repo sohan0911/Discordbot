@@ -944,7 +944,34 @@ async def ludomatch(ctx):
 
     await ctx.send(embed=embed)
 
-    
+@bot.command()
+async def unregister(ctx, member: discord.Member = None):
+
+    if not is_allowed_channel(ctx):
+        return
+
+    data = load_data()
+
+    # If no member mentioned → unregister yourself
+    if member is None:
+        member = ctx.author
+
+    # Check if user exists
+    found = False
+    for entry in data["teams"]:
+        if member.id in entry["members"]:
+            data["teams"].remove(entry)
+            found = True
+            break
+
+    if not found:
+        await ctx.send(f"❌ {member.mention} is not registered.")
+        return
+
+    save_data(data)
+
+    await ctx.send(f"🗑️ {member.mention} has been unregistered.")
+
 app = Flask(__name__)
 
 @app.route("/")
