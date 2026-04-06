@@ -638,8 +638,6 @@ async def on_message(message):
     if content == "sankar" and message.author.id == 1139607940232384524:
         await message.channel.send("<@696711346359894078>")
     
-    if content == "aj" and message.author.id == 1459529835331321981:
-        await message.channel.send(f"<@&1488295231681204254> ")
 
     if BAD_WORDS_PATTERN.search(message.content):
         try:
@@ -777,15 +775,15 @@ def format_error_embed():
 
     embed.add_field(
         name="✅ Correct Format",
-        value="```!register TeamName @member1 @member2 @member3 @member4```",
+        value="```!register @user```",
         inline=False
     )
 
     embed.add_field(
         name="⚠️ Rules",
         value=(
-            "- You must mention 4 different users\n"
-            "- No duplicate members\n"
+            "- Mention only 1 user\n"
+            "- User must not be already registered\n"
             "- Use this command in the correct channel"
         ),
         inline=False
@@ -812,7 +810,7 @@ def success_embed(team_name, members):
 
 # ------------------ COMMAND ------------------
 @bot.command()
-async def register(ctx, team_name: str, member1: discord.Member, member2: discord.Member, member3: discord.Member, member4: discord.Member):
+async def register(ctx, player: discord.Member):
 
     # Channel check
     if not is_allowed_channel(ctx):
@@ -820,38 +818,30 @@ async def register(ctx, team_name: str, member1: discord.Member, member2: discor
         return
 
     data = load_data()
-    members = [member1, member2, member3, member4]
 
-    # Duplicate team name check
+    # Check if already registered
     for team in data["teams"]:
-        if team["team_name"].lower() == team_name.lower():
-            await ctx.send(f"❌ Team **{team_name}** already exists!")
+        if player.id in team["members"]:
+            await ctx.send(f"❌ {player.mention} is already registered!")
             return
 
-    # Duplicate members in same team
-    if len(set(m.id for m in members)) < 4:
-        await ctx.send("❌ You cannot mention the same user more than once.")
-        return
-
-    # OPTIONAL: Prevent users joining multiple teams
-    existing_players = [mid for team in data["teams"] for mid in team["members"]]
-    for m in members:
-        if m.id in existing_players:
-            await ctx.send(f"❌ {m.mention} is already in another team!")
-            return
-
-    # Save team
-    new_team = {
-        "team_name": team_name,
-        "members": [m.id for m in members],
+    # Save player as solo "team"
+    new_entry = {
+        "team_name": player.name,
+        "members": [player.id],
         "registered_by": ctx.author.id
     }
 
-    data["teams"].append(new_team)
+    data["teams"].append(new_entry)
     save_data(data)
 
-    await ctx.send(embed=success_embed(team_name, members))
+    embed = discord.Embed(
+        title="✅ Registered Successfully!",
+        description=f"{player.mention} has been registered.",
+        color=discord.Color.green()
+    )
 
+    await ctx.send(embed=embed)
 
 # ------------------ ERROR HANDLER ------------------
 @register.error
@@ -867,13 +857,12 @@ async def register_error(ctx, error):
         await ctx.send(embed=format_error_embed())
 
     else:
-        await ctx.send("⚠️ An unexpected error occurred.")
+        await ctx.send("⚠️ Something went wrong.")
         print(error)
-
 
     # ------------------ VIEW TEAMS ------------------
 @bot.command()
-async def teams(ctx):
+async def participants(ctx):
 
     if not is_allowed_channel(ctx):
         return
@@ -881,19 +870,19 @@ async def teams(ctx):
     data = load_data()
 
     if not data["teams"]:
-        await ctx.send("No teams registered yet.")
+        await ctx.send("No participants registered yet.")
         return
 
     embed = discord.Embed(
-        title="📋 Registered Teams",
+        title="📋 Registered Participants",
         color=discord.Color.blue()
     )
 
-    for team in data["teams"]:
-        members = " ".join([f"<@{mid}>" for mid in team["members"]])
+    for entry in data["teams"]:
+        member = f"<@{entry['members'][0]}>"
         embed.add_field(
-            name=f"🔹 {team['team_name']}",
-            value=members,
+            name="🔹 Participant",
+            value=member,
             inline=False
         )
 
