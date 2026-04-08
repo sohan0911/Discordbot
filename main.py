@@ -1,19 +1,15 @@
 
-from email.mime import message
 import os
 import logging
 import discord
 import random
 import re
-from discord.ext import commands
-from dotenv import load_dotenv
-import threading
-from flask import Flask, ctx
-import threading
 import time
 import json
-import requests
 import aiohttp
+from collections import defaultdict
+from discord.ext import commands
+from dotenv import load_dotenv
 import google.generativeai as genai
 # =========================
 # Load Environment
@@ -638,7 +634,6 @@ async def on_message(message):
     if content == "sankar" and message.author.id == 1139607940232384524:
         await message.channel.send("<@696711346359894078>")
     
-
     if BAD_WORDS_PATTERN.search(message.content):
         try:
             await message.delete()
@@ -893,7 +888,8 @@ async def ludomatch(ctx):
 
     if not is_allowed_channel(ctx):
         return
-    if not is_allowed_channel(ctx):
+    if not ctx.author.id in Admins:
+        await ctx.send("❌ You can only unregister yourself.")
         return
     data = load_data()
 
@@ -977,17 +973,38 @@ async def unregister(ctx, member: discord.Member = None):
 
     await ctx.send(f"🗑️ {member.mention} has been unregistered.")
 
-app = Flask(__name__)
+Game_Admins = [1441514997938126930, 1419263240571191439]
+import time
 
-@app.route("/")
-def home():
-    return "Bot is running!"
+ROLE_ID = 1489373485896564946  # 🔁 replace with your role ID
+COOLDOWN = 7200  # 2 hours in seconds
 
-def run_flask():
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+last_used = 0
 
-threading.Thread(target=run_flask, daemon=True).start()
+@bot.command()
+async def amongus(ctx):
+    global last_used
+
+    # ✅ Admin check
+    if ctx.author.id not in Admins:
+        return await ctx.send("❌ You are not allowed to use this command.")
+
+    # ⏳ Cooldown check
+    now = time.time()
+    if now - last_used < COOLDOWN:
+        remaining = int(COOLDOWN - (now - last_used))
+        minutes = remaining // 60
+        return await ctx.send(f"⏳ Wait {minutes} minutes before using this again.")
+
+    # 🔔 Ping role
+    role = ctx.guild.get_role(ROLE_ID)
+    if not role:
+        return await ctx.send("❌ Role not found.")
+
+    await ctx.send(f"{role.mention} 🚨 Among Us event starting! Join up!")
+
+    # Update cooldown
+    last_used = now
 
 bot.run(TOKEN)
 
