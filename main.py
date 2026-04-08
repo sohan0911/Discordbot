@@ -7,6 +7,8 @@ import re
 import time
 import json
 import aiohttp
+from discord.ui import View, Button
+import math
 from collections import defaultdict
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -804,140 +806,169 @@ def success_embed(team_name, members):
 
 
 # ------------------ COMMAND ------------------
+# ------------------ COMMAND ------------------
 @bot.command()
 async def register(ctx, player: discord.Member):
+    """
+    Register a single participant in participants.json
+    Usage: !register @player
+    """
 
     # Channel check
     if not is_allowed_channel(ctx):
         await ctx.send("❌ You can only register in the designated channel.")
         return
 
-    data = load_data()
+    data = load_data()  # loads {"participants": [...]}
 
-    # Check if already registered
-    for team in data["teams"]:
-        if player.id in team["members"]:
-            await ctx.send(f"❌ {player.mention} is already registered!")
-            return
+    # Check if player is already registered
+    if player.id in data.get("participants", []):
+        await ctx.send(f"❌ {player.mention} is already registered!")
+        return
 
-    # Save player as solo "team"
-    new_entry = {
-        "team_name": player.name,
-        "members": [player.id],
-        "registered_by": ctx.author.id
-    }
-
-    data["teams"].append(new_entry)
+    # Add the player
+    data.setdefault("participants", []).append(player.id)
     save_data(data)
 
+    # Send confirmation embed
     embed = discord.Embed(
         title="✅ Registered Successfully!",
-        description=f"{player.mention} has been registered.",
+        description=f"{player.mention} has been added to the participants list.",
         color=discord.Color.green()
     )
 
     await ctx.send(embed=embed)
 
+
 # ------------------ ERROR HANDLER ------------------
 @register.error
 async def register_error(ctx, error):
-
     if not is_allowed_channel(ctx):
         return
 
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(embed=format_error_embed())
-
     elif isinstance(error, commands.BadArgument):
         await ctx.send(embed=format_error_embed())
-
     else:
         await ctx.send("⚠️ Something went wrong.")
         print(error)
 
     # ------------------ VIEW TEAMS ------------------
+# ------------------ VIEW TEAMS ------------------
 @bot.command()
 async def participants(ctx):
-
     if not is_allowed_channel(ctx):
         return
 
     data = load_data()
+    participant_ids = data.get("participants", [])
 
-    if not data["teams"]:
+    if not participant_ids:
         await ctx.send("No participants registered yet.")
         return
 
+    # Resolve IDs to member names
+    members = []
+    for uid in participant_ids:
+        member = ctx.guild.get_member(uid)
+        if member:
+            members.append(member.name)
+        else:
+            members.append(f"Unknown User ({uid})")
+
+    # Pagination settings
+    page_size = 10
+    total_pages = math.ceil(len(members) / page_size)
+    current_page = 1
+
+    def get_page_content(page):
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_members = members[start:end]
+        return "\n".join([f"{i+1}. {name}" for i, name in enumerate(page_members, start=start)])
+
+    # Create initial embed
     embed = discord.Embed(
-        title="📋 Registered Participants",
+        title=f"📋 Registered Participants (Page {current_page}/{total_pages})",
+        description=get_page_content(current_page),
         color=discord.Color.blue()
     )
 
-    for entry in data["teams"]:
-        member = f"<@{entry['members'][0]}>"
-        embed.add_field(
-            name="🔹 Participant",
-            value=member,
-            inline=False
-        )
+    # Buttons for pagination
+    class Paginator(View):
+        def __init__(self):
+            super().__init__(timeout=120)  # 2 minutes timeout
+            self.current_page = 1
 
-    await ctx.send(embed=embed)
+        @discord.ui.button(label="⬅️ Previous", style=discord.ButtonStyle.gray)
+        async def prev(self, interaction, button):
+            if self.current_page > 1:
+                self.current_page -= 1
+                embed.description = get_page_content(self.current_page)
+                embed.title = f"📋 Registered Participants (Page {self.current_page}/{total_pages})"
+                await interaction.response.edit_message(embed=embed, view=self)
 
+        @discord.ui.button(label="➡️ Next", style=discord.ButtonStyle.gray)
+        async def next(self, interaction, button):
+            if self.current_page < total_pages:
+                self.current_page += 1
+                embed.description = get_page_content(self.current_page)
+                embed.title = f"📋 Registered Participants (Page {self.current_page}/{total_pages})"
+                await interaction.response.edit_message(embed=embed, view=self)
+
+    await ctx.send(embed=embed, view=Paginator())
+# ------------------ LUDO MATCH ------------------
 @bot.command()
 async def ludomatch(ctx):
-
     if not is_allowed_channel(ctx):
         return
-    if not ctx.author.id in Admins:
-        await ctx.send("❌ You can only unregister yourself.")
+    if ctx.author.id not in Admins:
+        await ctx.send("❌ You are not authorized to run this command.")
         return
-    data = load_data()
 
+    data = load_data()
     if not data["teams"]:
         await ctx.send("❌ No participants registered.")
         return
 
-    # Get all participants
-    participants = [entry["members"][0] for entry in data["teams"]]
+    # Flatten all members for matchmaking
+    participants_list = []
+    for entry in data["teams"]:
+        participants_list.extend(entry["members"])
 
-    # Shuffle players
-    random.shuffle(participants)
+    random.shuffle(participants_list)
 
     matches = []
     waiting = []
 
-    # Create groups of 4
-    for i in range(0, len(participants), 4):
-        group = participants[i:i+4]
+    # Groups of 4 players
+    for i in range(0, len(participants_list), 4):
+        group = participants_list[i:i+4]
         if len(group) == 4:
             matches.append(group)
         else:
             waiting.extend(group)
 
-    # Create embed
+    # Send matches in embeds (split if >25 fields)
     embed = discord.Embed(
         title="🎲 Ludo Matchmaking",
         description="4 players per match. Winner advances.",
         color=discord.Color.gold()
     )
-
-    # Add matches
+    field_count = 0
     for idx, match in enumerate(matches, start=1):
         players = "\n".join([f"• <@{p}>" for p in match])
-        embed.add_field(
-            name=f"🎮 Match {idx}",
-            value=players,
-            inline=False
-        )
+        embed.add_field(name=f"🎮 Match {idx}", value=players, inline=False)
+        field_count += 1
+        if field_count == 25:
+            await ctx.send(embed=embed)
+            embed = discord.Embed(color=discord.Color.gold())
+            field_count = 0
 
-    # Add waiting list
     if waiting:
         wait_list = " ".join([f"<@{p}>" for p in waiting])
-        embed.add_field(
-            name="🪑 Waiting List",
-            value=wait_list,
-            inline=False
-        )
+        embed.add_field(name="🪑 Waiting List", value=wait_list, inline=False)
 
     await ctx.send(embed=embed)
 
