@@ -878,7 +878,7 @@ async def participants(ctx):
             members.append(f"Unknown User ({uid})")
 
     # Pagination settings
-    page_size = 10
+    page_size = 20
     total_pages = math.ceil(len(members) / page_size)
     current_page = 1
 
