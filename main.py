@@ -918,6 +918,8 @@ async def participants(ctx):
                 await interaction.response.edit_message(embed=embed, view=self)
 
     await ctx.send(embed=embed, view=Paginator())
+    
+Admins = [1139607940232384524, 1462248580793241623, 1257369692730036466]
 # ------------------ LUDO MATCH ------------------
 @bot.command()
 async def ludomatch(ctx):
@@ -928,14 +930,20 @@ async def ludomatch(ctx):
         return
 
     data = load_data()
-    if not data["teams"]:
-        await ctx.send("❌ No participants registered.")
+    participant_ids = data.get("participants", [])
+
+    if not participant_ids:
+        await ctx.send("No participants registered yet.")
         return
 
-    # Flatten all members for matchmaking
+    # Flatten all members
     participants_list = []
-    for entry in data["teams"]:
-        participants_list.extend(entry["members"])
+    for uid in participant_ids:
+        member = ctx.guild.get_member(uid)
+        if member:
+            participants_list.append(member.name)
+        else:
+            participants_list.append(f"Unknown User ({uid})")
 
     random.shuffle(participants_list)
 
@@ -957,22 +965,24 @@ async def ludomatch(ctx):
         color=discord.Color.gold()
     )
     field_count = 0
+
     for idx, match in enumerate(matches, start=1):
-        players = "\n".join([f"• <@{p}>" for p in match])
+        players = "\n".join([f"• {p}" for p in match])
         embed.add_field(name=f"🎮 Match {idx}", value=players, inline=False)
         field_count += 1
-        if field_count == 25:
+
+        if field_count == 25:  # max 25 fields per embed
             await ctx.send(embed=embed)
             embed = discord.Embed(color=discord.Color.gold())
             field_count = 0
 
-    if waiting:
-        wait_list = " ".join([f"<@{p}>" for p in waiting])
-        embed.add_field(name="🪑 Waiting List", value=wait_list, inline=False)
+    # Add remaining embed fields (if any) and waiting list
+    if waiting or field_count > 0:
+        if waiting:
+            wait_list = ", ".join([f"{p}" for p in waiting])
+            embed.add_field(name="🪑 Waiting List", value=wait_list, inline=False)
+        await ctx.send(embed=embed)
 
-    await ctx.send(embed=embed)
-
-Admins = [1139607940232384524, 1462248580793241623, 1257369692730036466]
 @bot.command()
 async def unregister(ctx, member: discord.Member = None):
 
@@ -990,11 +1000,9 @@ async def unregister(ctx, member: discord.Member = None):
         return
     # Check if user exists
     found = False
-    for entry in data["teams"]:
-        if member.id in entry["members"]:
-            data["teams"].remove(entry)
-            found = True
-            break
+    if member.id in data.get("participants", []):
+        data["participants"].remove(member.id)
+        found = True
 
     if not found:
         await ctx.send(f"❌ {member.mention} is not registered.")
