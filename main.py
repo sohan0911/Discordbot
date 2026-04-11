@@ -1,4 +1,5 @@
 
+from enum import member
 import os
 import logging
 import discord
@@ -147,9 +148,19 @@ async def handle_join(member, channel):
 
     guild = member.guild
     category = guild.get_channel(CONFIG["CATEGORY_ID"]) if CONFIG["CATEGORY_ID"] else channel.category
-
+    allowed_role = guild.get_role(1492471388764639373)
+    
     overwrites = {
         guild.default_role: discord.PermissionOverwrite(
+            connect=False,
+            speak=True,
+            use_soundboard=True,
+            use_embedded_activities=True,
+            use_voice_activation=True,
+            stream=True,
+            use_external_apps=True
+        ),
+        allowed_role: discord.PermissionOverwrite(
             connect=True,
             speak=True,
             use_soundboard=True,
@@ -178,6 +189,9 @@ async def handle_join(member, channel):
         )
         }
     
+     # Replace with your allowed role ID
+
+
     try:
         # Create the voice channel
         global game_counter
