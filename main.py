@@ -234,6 +234,7 @@ async def handle_join(member, channel):
 async def handle_leave(member, channel):
     if channel.id in active_channels and len(channel.members) == 0:
         try:
+            game_counter -= 1
             await channel.delete()
             active_channels.discard(channel.id)
             channel_owners.pop(channel.id, None)
