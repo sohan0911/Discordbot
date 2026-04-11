@@ -7,6 +7,7 @@ import re
 import time
 import json
 import aiohttp
+from discord import guild
 from discord.ui import View, Button
 import math
 from collections import defaultdict
@@ -19,7 +20,7 @@ import google.generativeai as genai
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-
+game_counter = 1
 # =========================
 # Logging
 # =========================
@@ -136,7 +137,7 @@ async def handle_join(member, channel):
         limit, prefix = 3, "TRIO"
 
     elif channel.id == CONFIG["SQUAD_CHANNEL_ID"]:
-        limit, prefix = 5, "SQUAD"   # changed from 4 → 5
+        limit, prefix = 4, "Game"   
 
     elif channel.id == CONFIG["TEAM_CHANNEL_ID"]:
         limit, prefix = 10, "TEAM"
@@ -179,8 +180,10 @@ async def handle_join(member, channel):
     
     try:
         # Create the voice channel
+        global game_counter
+
         new_channel = await guild.create_voice_channel(
-            name=f"{member.name} - {prefix}",
+            name=f"Game #{game_counter}",
             category=category,
             user_limit=limit,
             overwrites=overwrites,
