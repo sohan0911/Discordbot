@@ -189,7 +189,7 @@ async def handle_join(member, channel):
             overwrites=overwrites,
             bitrate=96000
         )
-
+        game_counter += 1
         await member.move_to(new_channel)
         active_channels.add(new_channel.id)
         channel_owners[new_channel.id] = member.id
