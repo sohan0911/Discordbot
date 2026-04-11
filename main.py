@@ -1041,17 +1041,15 @@ last_used = 0
 PARTICIPANT_ROLE_ID = 1492471388764639373
 @bot.command()
 async def giveparticipantsrole(ctx):
-    
-    # 🔒 Admin check (reuse your Admins list)
+
     if ctx.author.id not in Admins:
         return await ctx.send("❌ You are not allowed to use this command.")
 
-    # 📂 Load data
-    if not os.path.exists("participants.json"):
-        return await ctx.send("❌ participants.json not found.")
-
-    with open("participants.json", "r") as f:
-        data = json.load(f)
+    try:
+        with open("participants.json", "r") as f:
+            data = json.load(f)
+    except Exception as e:
+        return await ctx.send(f"❌ Error loading JSON: {e}")
 
     participant_ids = data.get("participants", [])
 
@@ -1061,24 +1059,35 @@ async def giveparticipantsrole(ctx):
     role = ctx.guild.get_role(PARTICIPANT_ROLE_ID)
 
     if not role:
-        return await ctx.send("❌ Role not found.")
+        return await ctx.send("❌ Role not found. Check ROLE ID.")
 
     success = 0
     failed = 0
+    not_found = 0
 
     for uid in participant_ids:
         member = ctx.guild.get_member(uid)
 
-        if member:
+        if not member:
             try:
-                await member.add_roles(role)
-                success += 1
+                member = await ctx.guild.fetch_member(uid)  # 🔥 important fix
             except:
-                failed += 1
-        else:
+                not_found += 1
+                continue
+
+        try:
+            await member.add_roles(role)
+            success += 1
+        except Exception as e:
+            print(f"Error adding role to {uid}: {e}")
             failed += 1
 
-    await ctx.send(f"✅ Role given to {success} users | ❌ Failed: {failed}")
+    await ctx.send(
+        f"✅ Done!\n"
+        f"✔️ Success: {success}\n"
+        f"❌ Failed: {failed}\n"
+        f"👻 Not Found: {not_found}"
+    )
 
 @bot.command()
 async def amongus(ctx):
