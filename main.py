@@ -232,12 +232,17 @@ async def handle_join(member, channel):
         print(f"❌ Error creating VC: {e}")
 
 async def handle_leave(member, channel):
+    global game_counter  # 🔥 THIS IS THE FIX
+
     if channel.id in active_channels and len(channel.members) == 0:
         try:
-            game_counter -= 1
             await channel.delete()
             active_channels.discard(channel.id)
             channel_owners.pop(channel.id, None)
+
+            # Decrease counter safely
+            game_counter = max(1, game_counter - 1)
+
         except Exception as e:
             print(f"❌ Error deleting VC: {e}")
 
