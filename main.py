@@ -149,7 +149,7 @@ async def handle_join(member, channel):
     guild = member.guild
     category = guild.get_channel(CONFIG["CATEGORY_ID"]) if CONFIG["CATEGORY_ID"] else channel.category
     allowed_role = guild.get_role(1492471388764639373)
-    
+
     overwrites = {
         guild.default_role: discord.PermissionOverwrite(
             connect=False,
@@ -1036,6 +1036,48 @@ ROLE_ID = 1489373485896564946  # 🔁 replace with your role ID
 COOLDOWN = 7200  # 2 hours in seconds
 
 last_used = 0
+
+PARTICIPANT_ROLE_ID = 1492471388764639373
+@bot.command()
+async def giveparticipantsrole(ctx):
+    
+    # 🔒 Admin check (reuse your Admins list)
+    if ctx.author.id not in Admins:
+        return await ctx.send("❌ You are not allowed to use this command.")
+
+    # 📂 Load data
+    if not os.path.exists("participants.json"):
+        return await ctx.send("❌ participants.json not found.")
+
+    with open("participants.json", "r") as f:
+        data = json.load(f)
+
+    participant_ids = data.get("participants", [])
+
+    if not participant_ids:
+        return await ctx.send("❌ No participants found.")
+
+    role = ctx.guild.get_role(PARTICIPANT_ROLE_ID)
+
+    if not role:
+        return await ctx.send("❌ Role not found.")
+
+    success = 0
+    failed = 0
+
+    for uid in participant_ids:
+        member = ctx.guild.get_member(uid)
+
+        if member:
+            try:
+                await member.add_roles(role)
+                success += 1
+            except:
+                failed += 1
+        else:
+            failed += 1
+
+    await ctx.send(f"✅ Role given to {success} users | ❌ Failed: {failed}")
 
 @bot.command()
 async def amongus(ctx):
