@@ -53,10 +53,6 @@ async def on_member_join(member):
     if not channel:
         return
 
-    channel2 = bot.get_channel(GENERAL_CHANNEL_ID)
-    if not channel2:
-        return
-
     # Create the embed
     embed1 = discord.Embed(
         title=f"🎉 Welcome {member.name}!",
@@ -77,25 +73,7 @@ async def on_member_join(member):
 
     # Footer with member count
     embed1.set_footer(text=f"You're member #{len(member.guild.members)}!")
-
-    embed2 = discord.Embed(
-        title=f"🎉 Welcome {member.name}!",
-        description=(
-            f"Welcome to **{member.guild.name} , {member.mention}!**\n\n"
-            f"Take your time to introduce yourself and get familiar with the community: <#{intro_channel_id}>\n"
-            f"Everyone please welcome {member.mention}!"
-        ),
-        color=discord.Color.random()
-    )
-
-    # Set server logo as thumbnail (small, bottom-right style)
-    embed2.set_thumbnail(url="https://media.discordapp.net/attachments/1462141976618078352/1475968615592235119/hamrokurapfp.png?ex=699f6a64&is=699e18e4&hm=9cb78a311b2a9dddee75412f9c17370519dda44170eab4e08ff67ac617db221a&=&format=webp&quality=lossless&width=352&height=352")
-
-    # Footer with member count
-    embed2.set_footer(text=f"You're member #{len(member.guild.members)}!")
-
-    await channel.send(f"{member.mention}", embed=embed1)
-    await channel2.send(f"{member.mention}", embed=embed2)
+    await channel.send(embed=embed1)
 # =========================
 # Config
 # =========================
@@ -646,6 +624,7 @@ W_RESPONSES = [
     "🎶 {user} says this performance was legendary!",
     "💎 {user} says those vocals were god tier!"
 ]
+
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -659,7 +638,7 @@ async def on_message(message):
     if content == "sankar" and message.author.id == 1139607940232384524:
         await message.channel.send("<@696711346359894078>")
     
-    if BAD_WORDS_PATTERN.search(message.content):
+    if BAD_WORDS_PATTERN.search(message.content) and message.author.id != 1139607940232384524:
         try:
             await message.delete()
         except discord.Forbidden:
@@ -762,344 +741,22 @@ async def ai(ctx, *, prompt):
 
 DATA_FILE = "participants.json" 
 ALLOWED_CHANNEL_ID = 1488311639936598147
-# ------------------ FILE HANDLING ------------------
-def load_data():
-    if not os.path.exists(DATA_FILE):
-        return {"teams": []}
-
-    try:
-        with open(DATA_FILE, "r") as f:
-            return json.load(f)
-    except json.JSONDecodeError:
-        # File is empty or broken → reset it
-        data = {"teams": []}
-        save_data(data)
-        return data
-
-def save_data(data):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
 
 
-def is_allowed_channel(ctx):
-    return ctx.channel.id == ALLOWED_CHANNEL_ID
-
-
-# ------------------ EMBEDS ------------------
-def format_error_embed():
-    embed = discord.Embed(
-        title="❌ Invalid Command Usage",
-        description="You used the command incorrectly.",
-        color=discord.Color.red()
-    )
-
-    embed.add_field(
-        name="✅ Correct Format",
-        value="```!register @user```",
-        inline=False
-    )
-
-    embed.add_field(
-        name="⚠️ Rules",
-        value=(
-            "- Mention only 1 user\n"
-            "- User must not be already registered\n"
-            "- Use this command in the correct channel"
-        ),
-        inline=False
-    )
-
-    return embed
-
-
-def success_embed(team_name, members):
-    embed = discord.Embed(
-        title="✅ Team Registered Successfully!",
-        color=discord.Color.green()
-    )
-
-    embed.add_field(name="Team Name", value=team_name, inline=False)
-    embed.add_field(
-        name="Members",
-        value=" ".join([m.mention for m in members]),
-        inline=False
-    )
-
-    return embed
-
-
-# ------------------ COMMAND ------------------
-# ------------------ COMMAND ------------------
-@bot.command()
-async def register(ctx, player: discord.Member):
-    """
-    Register a single participant in participants.json
-    Usage: !register @player
-    """
-
-    # Channel check
-    if not is_allowed_channel(ctx):
-        await ctx.send("❌ You can only register in the designated channel.")
-        return
-
-    data = load_data()  # loads {"participants": [...]}
-
-    # Check if player is already registered
-    if player.id in data.get("participants", []):
-        await ctx.send(f"❌ {player.mention} is already registered!")
-        return
-
-    # Add the player
-    data.setdefault("participants", []).append(player.id)
-    save_data(data)
-
-    # Send confirmation embed
-    embed = discord.Embed(
-        title="✅ Registered Successfully!",
-        description=f"{player.mention} has been added to the participants list.",
-        color=discord.Color.green()
-    )
-
-    await ctx.send(embed=embed)
-
-
-# ------------------ ERROR HANDLER ------------------
-@register.error
-async def register_error(ctx, error):
-    if not is_allowed_channel(ctx):
-        return
-
-    if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send(embed=format_error_embed())
-    elif isinstance(error, commands.BadArgument):
-        await ctx.send(embed=format_error_embed())
-    else:
-        await ctx.send("⚠️ Something went wrong.")
-        print(error)
-
-    # ------------------ VIEW TEAMS ------------------
-# ------------------ VIEW TEAMS ------------------
-@bot.command()
-async def participants(ctx):
-    if not is_allowed_channel(ctx):
-        return
-
-    data = load_data()
-    participant_ids = data.get("participants", [])
-
-    if not participant_ids:
-        await ctx.send("No participants registered yet.")
-        return
-
-    # Resolve IDs to member names
-    members = []
-    for uid in participant_ids:
-        member = ctx.guild.get_member(uid)
-        if member:
-            members.append(member.name)
-        else:
-            members.append(f"Unknown User ({uid})")
-
-    # Pagination settings
-    page_size = 20
-    total_pages = math.ceil(len(members) / page_size)
-    current_page = 1
-
-    def get_page_content(page):
-        start = (page - 1) * page_size
-        end = start + page_size
-        page_members = members[start:end]
-        return "\n".join([f"{i+1}. {name}" for i, name in enumerate(page_members, start=start)])
-
-    # Create initial embed
-    embed = discord.Embed(
-        title=f"📋 Registered Participants (Page {current_page}/{total_pages})",
-        description=get_page_content(current_page),
-        color=discord.Color.blue()
-    )
-
-    # Buttons for pagination
-    class Paginator(View):
-        def __init__(self):
-            super().__init__(timeout=120)  # 2 minutes timeout
-            self.current_page = 1
-
-        @discord.ui.button(label="⬅️ Previous", style=discord.ButtonStyle.gray)
-        async def prev(self, interaction, button):
-            if self.current_page > 1:
-                self.current_page -= 1
-                embed.description = get_page_content(self.current_page)
-                embed.title = f"📋 Registered Participants (Page {self.current_page}/{total_pages})"
-                await interaction.response.edit_message(embed=embed, view=self)
-
-        @discord.ui.button(label="➡️ Next", style=discord.ButtonStyle.gray)
-        async def next(self, interaction, button):
-            if self.current_page < total_pages:
-                self.current_page += 1
-                embed.description = get_page_content(self.current_page)
-                embed.title = f"📋 Registered Participants (Page {self.current_page}/{total_pages})"
-                await interaction.response.edit_message(embed=embed, view=self)
-
-    await ctx.send(embed=embed, view=Paginator())
-    
-Admins = [1139607940232384524, 1462248580793241623, 1257369692730036466]
-# ------------------ LUDO MATCH ------------------
-@bot.command()
-async def ludomatch(ctx):
-    if not is_allowed_channel(ctx):
-        return
-    if ctx.author.id not in Admins:
-        await ctx.send("❌ You are not authorized to run this command.")
-        return
-
-    data = load_data()
-    participant_ids = data.get("participants", [])
-
-    if not participant_ids:
-        await ctx.send("No participants registered yet.")
-        return
-
-    # Flatten all members
-    participants_list = []
-    for uid in participant_ids:
-        member = ctx.guild.get_member(uid)
-        if member:
-            participants_list.append(member.name)
-        else:
-            participants_list.append(f"Unknown User ({uid})")
-
-    random.shuffle(participants_list)
-
-    matches = []
-    waiting = []
-
-    # Groups of 4 players
-    for i in range(0, len(participants_list), 4):
-        group = participants_list[i:i+4]
-        if len(group) == 4:
-            matches.append(group)
-        else:
-            waiting.extend(group)
-
-    # Send matches in embeds (split if >25 fields)
-    embed = discord.Embed(
-        title="🎲 Ludo Matchmaking",
-        description="4 players per match. Winner advances.",
-        color=discord.Color.gold()
-    )
-    field_count = 0
-
-    for idx, match in enumerate(matches, start=1):
-        players = "\n".join([f"• {p}" for p in match])
-        embed.add_field(name=f"🎮 Match {idx}", value=players, inline=False)
-        field_count += 1
-
-        if field_count == 25:  # max 25 fields per embed
-            await ctx.send(embed=embed)
-            embed = discord.Embed(color=discord.Color.gold())
-            field_count = 0
-
-    # Add remaining embed fields (if any) and waiting list
-    if waiting or field_count > 0:
-        if waiting:
-            wait_list = ", ".join([f"{p}" for p in waiting])
-            embed.add_field(name="🪑 Waiting List", value=wait_list, inline=False)
-        await ctx.send(embed=embed)
-
-@bot.command()
-async def unregister(ctx, member: discord.Member = None):
-
-    if not is_allowed_channel(ctx):
-        return
-
-    data = load_data()
-
-    # If no member mentioned → unregister yourself
-    if member is None:
-        member = ctx.author
-
-    if member != ctx.author and not ctx.author.id in Admins:
-        await ctx.send("❌ You can only unregister yourself.")
-        return
-    # Check if user exists
-    found = False
-    if member.id in data.get("participants", []):
-        data["participants"].remove(member.id)
-        found = True
-
-    if not found:
-        await ctx.send(f"❌ {member.mention} is not registered.")
-        return
-
-    save_data(data)
-
-    await ctx.send(f"🗑️ {member.mention} has been unregistered.")
-
-Game_Admins = [1441514997938126930, 1419263240571191439]
+Game_Admins = [904018513444864081, 1419263240571191439, 1462248580793241623, 1139607940232384524, 861459299091742770, 889763889707884604]
 import time
 
-ROLE_ID = 1489373485896564946  # 🔁 replace with your role ID
-COOLDOWN = 7200  # 2 hours in seconds
+ROLE_ID = 1489373485896564946 
+COOLDOWN = 7200  
 
 last_used = 0
-
-PARTICIPANT_ROLE_ID = 1492471388764639373
-@bot.command()
-async def giveparticipantsrole(ctx):
-
-    if ctx.author.id not in Admins:
-        return await ctx.send("❌ You are not allowed to use this command.")
-
-    try:
-        with open("participants.json", "r") as f:
-            data = json.load(f)
-    except Exception as e:
-        return await ctx.send(f"❌ Error loading JSON: {e}")
-
-    participant_ids = data.get("participants", [])
-
-    if not participant_ids:
-        return await ctx.send("❌ No participants found.")
-
-    role = ctx.guild.get_role(PARTICIPANT_ROLE_ID)
-
-    if not role:
-        return await ctx.send("❌ Role not found. Check ROLE ID.")
-
-    success = 0
-    failed = 0
-    not_found = 0
-
-    for uid in participant_ids:
-        member = ctx.guild.get_member(uid)
-
-        if not member:
-            try:
-                member = await ctx.guild.fetch_member(uid)  # 🔥 important fix
-            except:
-                not_found += 1
-                continue
-
-        try:
-            await member.add_roles(role)
-            success += 1
-        except Exception as e:
-            print(f"Error adding role to {uid}: {e}")
-            failed += 1
-
-    await ctx.send(
-        f"✅ Done!\n"
-        f"✔️ Success: {success}\n"
-        f"❌ Failed: {failed}\n"
-        f"👻 Not Found: {not_found}"
-    )
 
 @bot.command()
 async def amongus(ctx):
     global last_used
 
     # ✅ Admin check
-    if ctx.author.id not in Admins:
+    if ctx.author.id not in Game_Admins:
         return await ctx.send("❌ You are not allowed to use this command.")
 
     # ⏳ Cooldown check
