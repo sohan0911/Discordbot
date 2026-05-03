@@ -809,6 +809,7 @@ def is_admin():
 # ✅ Register Team
 @bot.command()
 @in_allowed_channel()
+@is_admin()
 async def register(ctx, team_name: str = None, p1: str = None, p2: str = None, p3: str = None, p4: str = None, p5: str = None):
     global teams
 
@@ -886,7 +887,7 @@ async def remove_team(ctx, team_name: str):
     ))
 
 
-# 🔍 Check Team (Admin Only)
+# 🔍 Check Team 
 @bot.command()
 @in_allowed_channel()
 @is_admin()
@@ -922,7 +923,7 @@ async def team(ctx, team_name: str):
     await ctx.send(embed=embed)
 
 
-# 📋 List Teams (Public)
+# 📋 List Teams 
 @bot.command()
 @in_allowed_channel()
 async def teams_list(ctx):
