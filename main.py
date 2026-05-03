@@ -1,5 +1,3 @@
-
-from enum import member
 import os
 import logging
 import discord
@@ -739,12 +737,248 @@ async def ai(ctx, *, prompt):
     except Exception as e:
         await ctx.reply(f"Error: {e}")
 
-DATA_FILE = "participants.json" 
-ALLOWED_CHANNEL_ID = 1488311639936598147
 
+DATA_FILE = "teams.json"
+
+
+AUTHORIZED_USERS = [1139607940232384524,1462248580793241623,903299362912890891]
+
+# 📍 Allowed channel ID
+ALLOWED_CHANNEL_ID = 1500487123042701467
+
+
+# 📂 Load data
+def load_teams():
+    if not os.path.exists(DATA_FILE):
+        return {}
+    try:
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        return {}
+
+
+# 💾 Save data
+def save_teams(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+
+teams = load_teams()
+
+def success_embed(title, description):
+    return discord.Embed(
+        title=f"✅ {title}",
+        description=description,
+        color=0x2ecc71
+    )
+
+def error_embed(title, description):
+    return discord.Embed(
+        title=f"❌ {title}",
+        description=description,
+        color=0xe74c3c
+    )
+
+def info_embed(title, description):
+    return discord.Embed(
+        title=f"ℹ️ {title}",
+        description=description,
+        color=0x3498db
+    )
+# =========================
+# ✅ CHECK DECORATORS
+# =========================
+
+def in_allowed_channel():
+    async def predicate(ctx):
+        return ctx.channel.id == ALLOWED_CHANNEL_ID
+    return commands.check(predicate)
+
+
+def is_admin():
+    async def predicate(ctx):
+        return ctx.author.id in AUTHORIZED_USERS
+    return commands.check(predicate)
+
+
+# =========================
+# 🤖 COMMANDS
+# =========================
+
+# ✅ Register Team
+@bot.command()
+@in_allowed_channel()
+async def register(ctx, team_name: str = None, p1: str = None, p2: str = None, p3: str = None, p4: str = None, p5: str = None):
+    global teams
+
+    # ❗ Missing arguments handler (CUSTOM)
+    if not all([team_name, p1, p2, p3, p4, p5]):
+        embed = info_embed(
+            "How to Register a Team",
+            "**Correct Format:**\n"
+            "`!register <team_name> <player1> <player2> <player3> <player4> <player5>`\n\n"
+            "**Example:**\n"
+            "`!register TeamAlpha John Mike Alex Sam Leo`\n\n"
+            "⚠️ Make sure:\n"
+            "- Exactly 5 players\n"
+            "- No duplicate players\n"
+            "- Team name is unique"
+        )
+        return await ctx.send(embed=embed)
+
+    # ❌ Duplicate team
+    if team_name in teams:
+        return await ctx.send(embed=error_embed(
+            "Team Already Exists",
+            f"Team **{team_name}** is already registered."
+        ))
+
+    players = [p1, p2, p3, p4, p5]
+
+    # ❌ Duplicate players check
+    for existing_team, data in teams.items():
+        for player in players:
+            if player in data["players"]:
+                return await ctx.send(embed=error_embed(
+                    "Player Already Registered",
+                    f"**{player}** is already in team **{existing_team}**"
+                ))
+
+    # ✅ Save team
+    teams[team_name] = {
+        "players": players,
+        "captain": ctx.author.id
+    }
+
+    save_teams(teams)
+
+    # 🎉 Success embed
+    embed = success_embed(
+        "Team Registered Successfully!",
+        f"🏆 **Team:** {team_name}\n"
+        f"👑 **Captain:** {ctx.author.mention}\n\n"
+        f"👥 **Players:**\n"
+        f"• {p1}\n• {p2}\n• {p3}\n• {p4}\n• {p5}"
+    )
+
+    await ctx.send(embed=embed)
+
+# ❌ Remove Team (Admin Only)
+@bot.command()
+@in_allowed_channel()
+@is_admin()
+async def remove_team(ctx, team_name: str):
+    global teams
+
+    if team_name not in teams:
+        return await ctx.send(embed=error_embed(
+            "Team Not Found",
+            f"No team named **{team_name}** exists."
+        ))
+
+    del teams[team_name]
+    save_teams(teams)
+
+    await ctx.send(embed=success_embed(
+        "Team Removed",
+        f"🗑️ Team **{team_name}** has been removed from the tournament."
+    ))
+
+
+# 🔍 Check Team (Admin Only)
+@bot.command()
+@in_allowed_channel()
+@is_admin()
+async def team(ctx, team_name: str):
+    if team_name not in teams:
+        return await ctx.send(embed=error_embed(
+            "Team Not Found",
+            f"No team named **{team_name}** exists."
+        ))
+
+    data = teams[team_name]
+    players = data["players"]
+    captain_id = data.get("captain")
+
+    embed = discord.Embed(
+        title=f"🏆 {team_name}",
+        color=0x3498db
+    )
+
+    embed.add_field(
+        name="👥 Players",
+        value="\n".join(f"• {p}" for p in players),
+        inline=False
+    )
+
+    if captain_id:
+        embed.add_field(
+            name="👑 Captain",
+            value=f"<@{captain_id}>",
+            inline=False
+        )
+
+    await ctx.send(embed=embed)
+
+
+# 📋 List Teams (Public)
+@bot.command()
+@in_allowed_channel()
+async def teams_list(ctx):
+    if not teams:
+        return await ctx.send(embed=info_embed(
+            "No Teams Registered",
+            "📭 No teams have registered yet."
+        ))
+
+    embed = discord.Embed(
+        title="🏆 Registered Teams",
+        description=f"Total Teams: **{len(teams)}**",
+        color=0x9b59b6
+    )
+
+    for team_name, data in teams.items():
+        players = ", ".join(data["players"])
+        embed.add_field(
+            name=f"🏷️ {team_name}",
+            value=f"👥 {players}",
+            inline=False
+        )
+
+    await ctx.send(embed=embed)
+
+
+# =========================
+# ⚠️ ERROR HANDLER
+# =========================
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CheckFailure):
+        if ctx.command and ctx.command.name in ["register", "remove_team", "team", "teams_list"]:
+            if ctx.channel.id != ALLOWED_CHANNEL_ID:
+                await ctx.send(embed=error_embed(
+                    "Wrong Channel",
+                    "Use this command in the tournament channel only."
+                ))
+            else:
+                await ctx.send(embed=error_embed(
+                    "Permission Denied",
+                    "You are not allowed to use this command."
+                ))
+
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(embed=info_embed(
+            "Command Usage",
+            f"Incorrect usage of `{ctx.command}`.\n\nTry:\n"
+            "`!register TeamName p1 p2 p3 p4 p5`"
+        ))
+
+    else:
+        print(f"Unhandled error: {error}")
 
 Game_Admins = [904018513444864081, 1419263240571191439, 1462248580793241623, 1139607940232384524, 861459299091742770, 889763889707884604]
-import time
 
 ROLE_ID = 1489373485896564946 
 COOLDOWN = 7200  
