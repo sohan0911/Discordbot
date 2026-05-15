@@ -979,6 +979,124 @@ async def on_command_error(ctx, error):
     else:
         print(f"Unhandled error: {error}")
 
+
+# 🎭 Create & Assign Team Roles
+@bot.command()
+@in_allowed_channel()
+@is_admin()
+async def create_roles(ctx):
+    guild = ctx.guild
+
+    created_roles = []
+    assigned_roles = []
+    skipped_roles = []
+
+    # =========================
+    # ✅ CREATE MANAGEMENT ROLE
+    # =========================
+
+    management_role_name = "mlbbmanagement"
+
+    management_role = discord.utils.get(
+        guild.roles,
+        name=management_role_name
+    )
+
+    if not management_role:
+        management_role = await guild.create_role(
+            name=management_role_name,
+            color=discord.Color.gold(),
+            reason="MLBB Tournament Management Role"
+        )
+        created_roles.append(management_role_name)
+
+    else:
+        skipped_roles.append(management_role_name)
+
+    # =========================
+    # ✅ CREATE TEAM ROLES
+    # =========================
+
+    for team_name, data in teams.items():
+
+        role = discord.utils.get(guild.roles, name=team_name)
+
+        # Create role if it doesn't exist
+        if not role:
+            role = await guild.create_role(
+                name=team_name,
+                color=discord.Color.random(),
+                reason="Tournament Team Role"
+            )
+
+            created_roles.append(team_name)
+
+        else:
+            skipped_roles.append(team_name)
+
+        # =========================
+        # ✅ ASSIGN ROLE TO PLAYERS
+        # =========================
+
+        for player in data["players"]:
+
+            try:
+                # Remove <@ and >
+                player_id = int(
+                    player.replace("<@", "")
+                          .replace(">", "")
+                          .replace("!", "")
+                )
+
+                member = guild.get_member(player_id)
+
+                if member:
+
+                    if role not in member.roles:
+                        await member.add_roles(
+                            role,
+                            reason="Tournament Team Assignment"
+                        )
+
+                        assigned_roles.append(
+                            f"{member.name} → {team_name}"
+                        )
+
+            except Exception as e:
+                print(f"Error assigning role: {e}")
+
+    # =========================
+    # ✅ RESULT EMBED
+    # =========================
+
+    embed = discord.Embed(
+        title="🎭 Team Role Setup Complete",
+        color=0x2ecc71
+    )
+
+    if created_roles:
+        embed.add_field(
+            name="✅ Roles Created",
+            value="\n".join(f"• {r}" for r in created_roles),
+            inline=False
+        )
+
+    if skipped_roles:
+        embed.add_field(
+            name="⚠️ Existing Roles",
+            value="\n".join(f"• {r}" for r in skipped_roles),
+            inline=False
+        )
+
+    if assigned_roles:
+        embed.add_field(
+            name="👥 Assigned Players",
+            value="\n".join(f"• {r}" for r in assigned_roles[:20]),
+            inline=False
+        )
+
+    await ctx.send(embed=embed)
+
 Game_Admins = [904018513444864081, 1419263240571191439, 1462248580793241623, 1139607940232384524, 861459299091742770, 889763889707884604]
 
 ROLE_ID = 1489373485896564946 
