@@ -1097,6 +1097,143 @@ async def create_roles(ctx):
 
     await ctx.send(embed=embed)
 
+# 🎙️ Create Tournament Voice Channels
+@bot.command()
+@in_allowed_channel()
+@is_admin()
+async def setup_vcs(ctx):
+
+    guild = ctx.guild
+
+    created_channels = []
+    skipped_channels = []
+
+    # =========================
+    # ✅ GET MANAGEMENT ROLE
+    # =========================
+
+    management_role = discord.utils.get(
+        guild.roles,
+        name="mlbbmanagement"
+    )
+
+    if not management_role:
+        return await ctx.send(embed=error_embed(
+            "Management Role Missing",
+            "Please run `!create_roles` first."
+        ))
+
+    # =========================
+    # ✅ CREATE CATEGORY
+    # =========================
+
+    category_name = "MLBB TOURNAMENT"
+
+    category = discord.utils.get(
+        guild.categories,
+        name=category_name
+    )
+
+    if not category:
+
+        category = await guild.create_category(
+            category_name,
+            reason="MLBB Tournament Voice Channels"
+        )
+
+    # =========================
+    # ✅ CREATE TEAM VCS
+    # =========================
+
+    for team_name in teams.keys():
+
+        # Get team role
+        team_role = discord.utils.get(
+            guild.roles,
+            name=team_name
+        )
+
+        if not team_role:
+            continue
+
+        # Check if VC already exists
+        existing_vc = discord.utils.get(
+            guild.voice_channels,
+            name=f"🔊 {team_name}"
+        )
+
+        if existing_vc:
+            skipped_channels.append(team_name)
+            continue
+
+        # =========================
+        # ✅ PERMISSIONS
+        # =========================
+
+        overwrites = {
+
+            # ❌ Everyone denied
+            guild.default_role: discord.PermissionOverwrite(
+                view_channel=False,
+                connect=False
+            ),
+
+            # ✅ Team role allowed
+            team_role: discord.PermissionOverwrite(
+                view_channel=True,
+                connect=True,
+                speak=True
+            ),
+
+            # ✅ Management allowed
+            management_role: discord.PermissionOverwrite(
+                view_channel=True,
+                connect=True,
+                speak=True,
+                mute_members=True,
+                deafen_members=True,
+                move_members=True
+            )
+        }
+
+        # =========================
+        # ✅ CREATE VC
+        # =========================
+
+        await guild.create_voice_channel(
+            name=f"🔊 {team_name}",
+            category=category,
+            overwrites=overwrites,
+            reason="MLBB Tournament Team VC"
+        )
+
+        created_channels.append(team_name)
+
+    # =========================
+    # ✅ RESULT EMBED
+    # =========================
+
+    embed = discord.Embed(
+        title="🎙️ Tournament VCs Setup Complete",
+        color=0x2ecc71
+    )
+
+    if created_channels:
+        embed.add_field(
+            name="✅ Created VCs",
+            value="\n".join(f"• {c}" for c in created_channels),
+            inline=False
+        )
+
+    if skipped_channels:
+        embed.add_field(
+            name="⚠️ Already Existing",
+            value="\n".join(f"• {c}" for c in skipped_channels),
+            inline=False
+        )
+
+    await ctx.send(embed=embed)
+
 Game_Admins = [904018513444864081, 1419263240571191439, 1462248580793241623, 1139607940232384524, 861459299091742770, 889763889707884604]
 
 ROLE_ID = 1489373485896564946 
